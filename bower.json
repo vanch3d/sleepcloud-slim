@@ -1,0 +1,17 @@
+{
+  "name": "vanch3d/sleepcloud-slim",
+  "homepage": "https://github.com/vanch3d/sleepcloud-slim",
+  "authors": [
+    "vanch3d <nicolas.github@calques3d.org>"
+  ],
+  "description": "A PHP/Slim/D3 port of the Sleep-as-Android & Sleepcloud app ecosystem",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "jquery": "^3.3.1",
+    "d3": "mbostock-bower/d3-bower#3.5",
+    "bootstrap": "^4.0.0",
+    "d3-process-map": "vanch3d/d3-process-map#^1.2.0",
+    "font-awesome": "^5.0.8"
+  }
+}
