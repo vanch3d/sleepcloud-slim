@@ -1,5 +1,10 @@
 # Created by https://www.gitignore.io/api/node,bower,composer,phpstorm
 
+### Sleepcloud-slim specifics ###
+/public/images/
+/public/css/
+/public/js/
+
 ### Slim specifics ###
 /.cache/
 /.logs/
