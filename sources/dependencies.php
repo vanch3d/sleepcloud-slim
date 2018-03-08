@@ -24,6 +24,10 @@ $container['view'] = function (\Slim\Container  $c) {
     $view->addExtension(new TwigExtension($c->get('router'), $c->get('request')->getUri()));
     $view->addExtension(new Twig_Extension_Debug());
     $view->addExtension(new Twig_Extension_Profiler($c['twig_profile']));
+
+    $view->getEnvironment()->addGlobal("current_path", $c["request"]->getUri()->getPath());
+    $view->getEnvironment()->addGlobal("app_name", getenv('APP_NAME'));
+
     return $view;
 };
 
