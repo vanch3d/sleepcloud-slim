@@ -1,0 +1,32 @@
+{
+  "name": "vanch3d/sleepcloud-slim",
+  "version": "0.1.0",
+  "description": "A PHP/Slim/D3 port of the Sleep-as-Android & Sleepcloud app ecosystem",
+  "main": "gulpfile.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vanch3d/sleepcloud-slim.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vanch3d/sleepcloud-slim/issues"
+  },
+  "homepage": "https://github.com/vanch3d/sleepcloud-slim#readme",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-concat": "^2.6.1",
+    "gulp-cssnano": "^2.1.2",
+    "gulp-debug": "^3.2.0",
+    "gulp-image": "^4.3.0",
+    "gulp-rename": "^1.2.2",
+    "gulp-sass": "^3.1.0",
+    "gulp-uglify": "^3.0.0"
+  }
+}
