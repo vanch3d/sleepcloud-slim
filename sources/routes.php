@@ -18,9 +18,10 @@
 $app->group('/',function() {
 
     // Main routes
-    $this->get('', function () {
-        echo "Hello world";
-    })->setname('home');
+    $this->get('', function ($request, $response, $args) {
+        return $this->view->render($response, '_defaultsite.twig');
+    })->setName('home');
+
 
 });
 
