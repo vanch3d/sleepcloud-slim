@@ -28,7 +28,7 @@ return [
 
         // TWIG settings
         'view' => [
-            'template_path' =>  __DIR__ . '/../resources/templates/',
+            'template_path' =>  __DIR__ . '/../res/templates/',
             'twig' => [
                 'debug' => (getenv('APP_DEBUG') === 'true'),
                 'cache' => __DIR__ . '/../.cache/',
