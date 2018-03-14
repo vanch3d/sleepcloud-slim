@@ -6,6 +6,9 @@
  * Time: 23:17
  */
 
+use NVL\Controllers\APIController;
+use Tracy\Debugger;
+
 
 /**
  * Local Middlewares
@@ -22,9 +25,14 @@ $app->group('/',function() {
         return $this->view->render($response, '_defaultsite.twig');
     })->setName('home');
 
-
 });
 
+$app->group('/api',function() {
+
+    // sleep data
+    $this->get('/sleepcloud/records', APIController::class . ':getSleepData')->setName('api.sleep.records');
+
+});
 
 /**
  * Global Middlewares
