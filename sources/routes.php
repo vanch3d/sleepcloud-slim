@@ -7,6 +7,9 @@
  */
 
 use NVL\Controllers\APIController;
+use NVL\Controllers\VisController;
+use Slim\Http\Request;
+use Slim\Http\Response;
 use Tracy\Debugger;
 
 
@@ -18,12 +21,14 @@ use Tracy\Debugger;
 /**
  * Web App Routes
  */
-$app->group('/',function() {
+$app->group('',function() {
 
     // Main routes
-    $this->get('', function ($request, $response, $args) {
-        return $this->view->render($response, '_defaultsite.twig');
+    $this->get('/', function ($request, $response, $args) {
+        return $this->view->render($response, 'pages/home.twig');
     })->setName('home');
+
+    $this->get('/calendar', VisController::class . ':showCalendar')->setName('vis.calendar');
 
 });
 
@@ -40,6 +45,17 @@ $app->group('/api',function() {
 
 $app->add(new \RunTracy\Middlewares\TracyMiddleware($app));
 $app->add(new \Slim\HttpCache\Cache('public', 86400));
+$app->add(function (Request $request, Response $response, callable $next) {
+    $route = $request->getAttribute('route');
+    if (!empty($route)) {
+        $name = $route->getName();
+        //$groups = $route->getGroups();
+        //$methods = $route->getMethods();
+        //$arguments = $route->getArguments();
+        $this->view->getEnvironment()->addGlobal("current_route", $name);
+    }
+    return $next($request, $response);
+});
 
 
 
