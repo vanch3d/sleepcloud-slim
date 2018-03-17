@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    {% block injectMETA %}{% endblock %}
+
+    <link rel="icon" href="images/favicon.ico">
+
+    <title>SleepCloud-slim | {% block title %}{% endblock %}</title>
+
+    <!-- Core CSS -->
+    <link href="css/app.min.css" rel="stylesheet">
+    <!-- Secondary CSS -->
+    {% block injectCSS %}{% endblock %}
+    <style>
+        body {
+            display: none;
+        }
+
+        .fontawesome-i2svg-active body {
+            display: initial;
+        }
+    </style>
+</head>
+
+<body class="text-center">
+
+<div class="cover-container d-flex h-100 p-3 mx-auto flex-column">
+    {% include('widgets/base.header.twig') %}
+
+    <main role="main" class="inner cover">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% include('widgets/base.footer.twig') %}
+
+
+</div>
+
+<!-- Bootstrap & Core JavaScript -->
+<script src="js/app.min.js" ></script>
+{% block injectJS %}{% endblock %}
+
+</body>
+</html>

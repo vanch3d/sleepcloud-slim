@@ -1,0 +1,10 @@
+<header class="masthead mb-auto">
+    <div class="inner">
+        <h3 class="masthead-brand">{{ app_name }}</h3>
+        <nav class="nav nav-masthead justify-content-center">
+            <a class="nav-link {{ current_route =='home' ? 'active'}}" href="{{ path_for('home') }}"><i title="home" class="fas fa-home"></i> Home</a>
+            <a class="nav-link {{ current_route =='vis.calendar' ? 'active'}}" href="{{ path_for('vis.calendar') }}"><i class="fas fa-calendar-alt"></i> Calendar</a>
+            <a class="nav-link" href="#"><i class="fas fa-info-circle"></i> About</a>
+        </nav>
+    </div>
+</header>
