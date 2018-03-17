@@ -20,7 +20,8 @@ var config = {
 var jsList = [
     config.bowerDir + '/jquery/dist/jquery.js',
     config.bowerDir + '/bootstrap/dist/js/bootstrap.js',
-    config.bowerDir + '/font-awesome/svg-with-js/js/fontawesome-all.js'
+    config.bowerDir + '/font-awesome/svg-with-js/js/fontawesome-all.js',
+    config.bowerDir + '/jquery.key.js/jquery.key.js'
 ];
 
 // list of CSS files to combine
@@ -31,7 +32,7 @@ var cssList = [
 
 // list of D3-v3 plugins to combine
 var jsD3v3List = [
-    config.bowerDir + '/d3-bower/d3.js',
+    config.bowerDir + '/d3-v3/d3.js',
     config.bowerDir + '/d3-process-map/dist/colorbrewer.js',
     config.bowerDir + '/d3-process-map/dist/geometry.js'
 ];
@@ -50,7 +51,7 @@ var imgList = [
 gulp.task('js:d3v3', function () {
     return gulp.src(jsD3v3List)
         .pipe(debug({title: 'd3 (v3):'}))
-        .pipe(concat('d3.nvl-bundle.js'))
+        .pipe(concat('d3.v3-bundle.js'))
         .pipe(gulp.dest('./public/js'))
         .pipe(uglify())
         .pipe(rename({ suffix: '.min' }))
