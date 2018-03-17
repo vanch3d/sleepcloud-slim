@@ -1,0 +1,18 @@
+{% extends 'base.twig' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+    <h1 class="cover-heading">Sleepcloud</h1>
+    <p class="lead">Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.
+        Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam
+        egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo.</p>
+    <p>
+        route: {{ current_route }}<br>
+        path: {{ current_path }}<br>
+        app: {{ app_name }}
+    </p>
+    <p class="lead">
+        <a href="#" class="btn btn-lg btn-secondary">Learn more</a>
+    </p>
+{% endblock %}
