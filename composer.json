@@ -18,7 +18,7 @@
   "minimum-stability": "dev",
   "prefer-stable" : true,
   "require" : {
-    "php": ">=7.0.0",
+    "php": ">=7.1.0",
     "slim/slim": "^3.8",
     "slim/twig-view": "^2.1",
     "slim/csrf": "^0.8.1",
@@ -27,7 +27,11 @@
     "monolog/monolog": "1.23.0",
     "rmccue/requests": "1.7.0",
     "runcmf/runtracy": "0.2.10",
-    "slim/http-cache": "0.4.0"
+    "slim/http-cache": "0.4.0",
+    "kunalvarma05/dropbox-php-sdk": "v0.2.1",
+    "tuupola/slim-basic-auth": "3.0.0",
+    "league/csv": "9.1.2",
+    "chadicus/slim-oauth2": "^3.1"
   },
   "autoload": {
     "psr-4": {
