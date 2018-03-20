@@ -34,7 +34,13 @@ var cssList = [
 var jsD3v3List = [
     config.bowerDir + '/d3-v3/d3.js',
     config.bowerDir + '/d3-process-map/dist/colorbrewer.js',
-    config.bowerDir + '/d3-process-map/dist/geometry.js'
+    config.bowerDir + '/d3-process-map/dist/geometry.js',
+    config.bowerDir + '/cubism/cubism.v1.js'
+];
+
+// list of D3-v4 plugins to combine
+var jsD3v4List = [
+    config.bowerDir + '/d3/d3.js'
 ];
 
 // list of font & font-icons to copy
@@ -58,6 +64,17 @@ gulp.task('js:d3v3', function () {
         .pipe(gulp.dest('./public/js'));
 });
 
+// d3 bundle: d3 & all addons minified in a single package, separate from core
+gulp.task('js:d3v4', function () {
+    return gulp.src(jsD3v4List)
+        .pipe(debug({title: 'd3 (v4):'}))
+        .pipe(concat('d3.v4-bundle.js'))
+        .pipe(gulp.dest('./public/js'))
+        .pipe(uglify())
+        .pipe(rename({ suffix: '.min' }))
+        .pipe(gulp.dest('./public/js'));
+});
+
 // core application scripts
 gulp.task('js:core', function () {
     return gulp.src(jsList)
@@ -70,7 +87,7 @@ gulp.task('js:core', function () {
 });
 
 // reprocess all scripts
-gulp.task('scripts', ['js:d3v3','js:core']);
+gulp.task('scripts', ['js:d3v3','js:d3v4','js:core']);
 
 // core application styles
 gulp.task('css:core', function () {
