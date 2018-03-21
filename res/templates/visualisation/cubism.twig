@@ -156,13 +156,22 @@
 
                                 // mark unset/awake values as negative
                                 if (val <= DATA_UNSET) val = -1.5;
-                                //else if (val <= DATA_CUTOFF) val = NaN;
+                                else if (val <= DATA_CUTOFF) val = NaN;
 
                                 values.push(val);
                                 current = newset.shift();
 
                                 // interpolation
                                 while(interpolations.length > 0) interpolations.pop();
+                                /*if (current)
+                                {
+                                    var val2 = current.value;
+                                    var interpolator = d3.interpolateNumber(val, val2);
+                                    interpolations = d3.quantize(interpolator,7);
+                                    interpolations.pop();
+                                    interpolations.shift();
+
+                                }*/
                                 while(interpolations.length < DATA_INTERVAL) {
                                     // @todo[vanch3d] Try linear or spline interpolation
                                     interpolations.push(val);
