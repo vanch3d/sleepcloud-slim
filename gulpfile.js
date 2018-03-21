@@ -35,7 +35,8 @@ var jsD3v3List = [
     config.bowerDir + '/d3-v3/d3.js',
     config.bowerDir + '/d3-process-map/dist/colorbrewer.js',
     config.bowerDir + '/d3-process-map/dist/geometry.js',
-    config.bowerDir + '/cubism/cubism.v1.js'
+    config.bowerDir + '/cubism/cubism.v1.js',
+    config.bowerDir + '/d3-interpolate/d3-interpolate.js'
 ];
 
 // list of D3-v4 plugins to combine
@@ -94,7 +95,7 @@ gulp.task('css:core', function () {
     return gulp.src(cssList)
         .pipe(debug({title: 'stylesheet:'}))
         .pipe(sass())
-        .pipe(nano())
+        .pipe(nano({colormin: false}))
         .pipe(concat('app.css'))
         .pipe(rename({ suffix: '.min' }))
         .pipe(gulp.dest('./public/css'))
