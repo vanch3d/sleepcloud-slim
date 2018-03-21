@@ -136,6 +136,7 @@
 
                     // get the current (first) data point
                     var current = newset.shift();
+                    var interpolations = [];
 
                     // start ticking
                     while (last < stop) {
@@ -154,14 +155,27 @@
                                 var val = current.value;
 
                                 // mark unset/awake values as negative
-                                if (val <= DATA_UNSET) val = -3;
-                                else if (val <= DATA_CUTOFF) val = NaN;
+                                if (val <= DATA_UNSET) val = -1.5;
+                                //else if (val <= DATA_CUTOFF) val = NaN;
 
                                 values.push(val);
                                 current = newset.shift();
+
+                                // interpolation
+                                while(interpolations.length > 0) interpolations.pop();
+                                while(interpolations.length < DATA_INTERVAL) {
+                                    // @todo[vanch3d] Try linear or spline interpolation
+                                    interpolations.push(val);
+                                }
+
+                            }
+                            else if (interpolations.length > 0)
+                            {
+                                interp = interpolations.shift();
+                                values.push(interp);
                             }
                             else
-                                values.push(NaN)
+                                values.push(NaN);
 
                         }
                         last += step;
