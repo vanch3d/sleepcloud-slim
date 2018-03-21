@@ -107,7 +107,8 @@
         $(document).ready(function() {
 
             const   DATA_INTERVAL = 5,   // measurement interval for the actigraph (in minutes)
-                    DATA_CUTOFF = 0.07;  // near-zero cut-off point for actigraph data
+                    DATA_CUTOFF = 0.07,  // near-zero cut-off point for actigraph data
+                    DATA_UNSET = -0.01;  // data not recorded
 
             var fmtTitle = d3.time.format("%a %b %e");
             var fmtId= d3.time.format("%H.%M");
@@ -119,14 +120,11 @@
              */
             function sleepMetric(date,dataset) {
                 var values = [],
-                    last;
+                    last = NaN;
 
-                var initTimeStamp = NaN;
-                if (dataset[0] && dataset[0].id)
-                    initTimeStamp = dataset[0].id;
-
+                // set midnight on day of data collection (From attribute)
                 var d1 = d3.time.day(date);
-                
+
                 // @todo[vanch3d] check if clone is really necessary
                 var newset = $.extend(true, [],dataset);
 
@@ -134,41 +132,42 @@
                     start = +start;
                     stop = +stop;
 
-                    //console.log("start:",start);
-                    //console.log("stop:",stop);
-                    console.log("step:",step);
-
                     if (isNaN(last)) last = start;
 
-                    if (dataset[0] && dataset[0].id)
-                    {
-                        var t2 = fmtYr(d1) + " " + dataset[0].id;
-                        var d2 = new Date(t2);
-                        d2 = d3.time.hour.offset(d2,+4);
-                        var lapse = d2 - d1;
-                        console.log("lapse:",lapse);
-                        while ((last-start) <= (lapse)) {
-                            last += step;
-                            values.push(NaN)
-                        }
-                    }
-                    console.log("cur: ", fmtId(new Date(d2)));
-                    console.log("last: ", fmtId(new Date(last)));
+                    // get the current (first) data point
+                    var current = newset.shift();
 
+                    // start ticking
                     while (last < stop) {
-                        last += step;
-                        var obj = newset.shift();
-                        if (obj) {
-                            var val = obj.value;
-                            if (val <= DATA_CUTOFF) val = NaN;
-                            
-                            // @todo[vanch3d] interval is not fixed
-                            for(var i=0; i < DATA_INTERVAL; i++) values.push(val)
+                        if (current)
+                        {
+                            // compute timestamp of current data point
+                            var t2 = fmtYr(new Date(start)) + " " + current.id;
+                            var d2 = new Date(t2);
+                            // offset day if hours before axis start
+                            if (d2.getHours()<20)
+                                d2 = d3.time.day.offset(d2,+1);
+
+                            // if tick corresponds to a data record
+                            if ((d2-last)===0)
+                            {
+                                var val = current.value;
+
+                                // mark unset/awake values as negative
+                                if (val <= DATA_UNSET) val = -3;
+                                else if (val <= DATA_CUTOFF) val = NaN;
+
+                                values.push(val);
+                                current = newset.shift();
+                            }
+                            else
+                                values.push(NaN)
+
                         }
+                        last += step;
                     }
                     callback(null, values = values.slice((start - stop) / step));
                 }, fmtTitle(date));
-                metric.initTimeStamp = initTimeStamp;
                 return metric;
             }
 
@@ -181,8 +180,7 @@
                 .stop();
 
             // for debugging purpose
-            var foo = random("foo"),
-                bar = random("bar");
+            var foo = random("foo");
 
             var axis = context.axis()
                 .orient("top")
@@ -199,14 +197,13 @@
                     .attr("class", "rule")
                     .call(context.rule());
 
-                var ret = [foo];
+                var ret = [/*foo*/];
                 var url = "{{ path_for('api.sleep.records') }}";
                 d3.json(url, function(error, json) {
                     var data = json.data;
                     $.each(data,function(i,d){
                         var t= sleepMetric(new Date(d.From),d.Actigraph);
                         ret.push(t);
-                        console.log(t);
                     });
                     var horizon = context.horizon();
 
@@ -214,7 +211,7 @@
                         .data(ret)
                         .enter().append("div")
                         .attr("class", "horizon")
-                        .call(horizon.height(40).extent([-1, 6]));
+                        .call(horizon.height(40).extent([-6, 6]));
                 });
             });
 
