@@ -19,6 +19,7 @@ try {
 }
 
 try {
+    $config = require_once __DIR__ . './../sources/helpers.php';
     $config = require_once __DIR__ . './../sources/config.php';
     $config = $config['settings']['swagger'];
     if ($config === null)
