@@ -6,7 +6,7 @@
  * Time: 21:06
  */
 
-namespace NVL\SleepCloud;
+namespace NVL\Models\SleepCloud;
 
 use Exception;
 use http\Exception\BadConversionException;
