@@ -28,7 +28,9 @@
     "gulp-image": "^4.3.0",
     "gulp-rename": "^1.2.2",
     "gulp-sass": "^3.1.0",
-    "gulp-uglify": "^3.0.0"
+    "gulp-uglify": "^3.0.0",
+    "merge-stream": "^1.0.1"
   },
-  "dependencies": {}
+  "dependencies": {
+  }
 }
