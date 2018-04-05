@@ -6,9 +6,6 @@
  * Time: 22:52
  */
 
-defined('DS') || define('DS', DIRECTORY_SEPARATOR);
-define('DIR', realpath(__DIR__ . '/../') . DS);
-
 return [
     'settings' => [
 
