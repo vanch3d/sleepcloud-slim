@@ -29,13 +29,16 @@ $app->group('',function() {
     })->setName('home');
 
     $this->get('/calendar', VisController::class . ':showCalendar')->setName('vis.calendar');
+    $this->get('/nights/{id}', VisController::class . ':showNight')->setName('vis.night');
+    $this->get('/horizon', VisController::class . ':showHorizon')->setName('vis.horizon');
 
 });
 
 $app->group('/api',function() {
 
     // sleep data
-    $this->get('/sleepcloud/records', APIController::class . ':getSleepData')->setName('api.sleep.records');
+    $this->get('/records/sleep', APIController::class . ':getSleepData')->setName('api.sleep.records');
+    $this->get('/records/mood', APIController::class . ':getMoodData')->setName('api.mood.records');
 
 });
 
