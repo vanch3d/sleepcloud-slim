@@ -1,9 +1,15 @@
+@import "bootstrap";
+
 /*!
  * Sleepcloud-slim v0.1
  */
 
 // Modules and Variables
 @import "base/base";
+@import "component/component";
 
 // Third-party CSS stylesheets
 @import "vendor/cover";
+
+// hacks to fix
+@import "shame";
