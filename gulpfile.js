@@ -7,6 +7,7 @@ const sass   = require('gulp-sass');
 const nano   = require('gulp-cssnano');
 
 const image = require('gulp-image');
+const merge = require('merge-stream');
 const run = require('child_process').exec;
 
 // application paths
@@ -66,7 +67,8 @@ var iconList = [
 
 // list of images to process and copy
 var imgList = [
-    config.resDir + '/images/**/**/*.*'
+    config.resDir + '/images/**/**/*.*',
+    config.bowerDir + '/swagger-ui/dist/*.png'
 ];
 
 // d3 bundle: d3 & all addons minified in a single package, separate from core
@@ -91,6 +93,24 @@ gulp.task('js:d3v4', function () {
         .pipe(gulp.dest('./public/js'));
 });
 
+gulp.task('js:swagger', function () {
+    // swagger-ui scripts
+    var jsSwagger = gulp.src([
+        config.bowerDir + '/swagger-ui/dist/swagger-ui-bundle.js',
+        config.bowerDir + '/swagger-ui/dist/swagger-ui-standalone-preset.js',
+        config.bowerDir + '/swagger-ui/dist/swagger-ui.js'])
+        .pipe(debug({title: 'swagger:'}))
+        .pipe(gulp.dest('./public/js'));
+    // swagger-ui css
+    var cssSwagger = gulp.src([
+        config.bowerDir + '/swagger-ui/dist/swagger-ui.css'])
+        .pipe(debug({title: 'swagger:'}))
+        .pipe(gulp.dest('./public/css'));
+
+    return merge(jsSwagger,cssSwagger);
+});
+
+
 // core application scripts
 gulp.task('js:core', function () {
     return gulp.src(jsList)
@@ -103,7 +123,7 @@ gulp.task('js:core', function () {
 });
 
 // reprocess all scripts
-gulp.task('scripts', ['js:d3v3','js:d3v4','js:core']);
+gulp.task('scripts', ['js:d3v3','js:d3v4','js:swagger','js:core']);
 
 // core application styles
 gulp.task('css:core', function () {

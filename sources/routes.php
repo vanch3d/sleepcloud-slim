@@ -28,6 +28,10 @@ $app->group('',function() {
         return $this->view->render($response, 'pages/home.twig');
     })->setName('home');
 
+    $this->get('/swagger', function ($request, $response, $args) {
+        return $this->view->render($response, 'pages/swagger.ui.twig');
+    })->setName('swagger.ui');
+
     $this->get('/calendar', VisController::class . ':showCalendar')->setName('vis.calendar');
     $this->get('/nights/{id}', VisController::class . ':showNight')->setName('vis.night');
     $this->get('/horizon', VisController::class . ':showHorizon')->setName('vis.horizon');
@@ -36,7 +40,10 @@ $app->group('',function() {
 
 $app->group('/api',function() {
 
-    // sleep data
+    // swaggerUI
+    $this->get('', APIController::class . ':getOpenAPI')->setName('api.swagger');
+
+    // raw data
     $this->get('/records/sleep', APIController::class . ':getSleepData')->setName('api.sleep.records');
     $this->get('/records/mood', APIController::class . ':getMoodData')->setName('api.mood.records');
 
