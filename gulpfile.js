@@ -1,19 +1,33 @@
 var gulp = require('gulp');
-const debug = require('gulp-debug');
+const debug  = require('gulp-debug');
 const concat = require('gulp-concat');
 const uglify = require('gulp-uglify');
 const rename = require('gulp-rename');
-
-const sass = require('gulp-sass');
-const nano = require('gulp-cssnano');
+const sass   = require('gulp-sass');
+const nano   = require('gulp-cssnano');
 
 const image = require('gulp-image');
 
 // application paths
 var config = {
     bowerDir: './bower_components',
-    resDir:   './res/assets',
-    destDir:  './public'
+    resDir: './res/assets',
+    destDir: './public'
+};
+
+// gulp options
+var options = {
+    sass: {
+        outputStyle: 'nested',
+        precision: 3,
+        errLogToConsole: true,
+        includePaths: [
+            config.bowerDir + '/bootstrap/scss/'
+        ]
+    },
+    nano: {
+        colormin: false
+    }
 };
 
 // list of core JS files to combine
@@ -26,7 +40,7 @@ var jsList = [
 
 // list of CSS files to combine
 var cssList = [
-    config.bowerDir + '/bootstrap/dist/css/bootstrap.css',
+    //config.bowerDir + '/bootstrap/dist/css/bootstrap.css',
     config.resDir   + '/styles/app.scss'
 ];
 
@@ -94,8 +108,8 @@ gulp.task('scripts', ['js:d3v3','js:d3v4','js:core']);
 gulp.task('css:core', function () {
     return gulp.src(cssList)
         .pipe(debug({title: 'stylesheet:'}))
-        .pipe(sass())
-        .pipe(nano({colormin: false}))
+        .pipe(sass(options.sass))
+        .pipe(nano(options.nano))
         .pipe(concat('app.css'))
         .pipe(rename({ suffix: '.min' }))
         .pipe(gulp.dest('./public/css'))
