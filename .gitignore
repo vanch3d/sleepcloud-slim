@@ -4,6 +4,8 @@
 /public/images/
 /public/css/
 /public/js/
+/openapi.json
+
 
 ### Slim specifics ###
 /.cache/
