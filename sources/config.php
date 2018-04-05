@@ -6,6 +6,9 @@
  * Time: 22:52
  */
 
+defined('DS') || define('DS', DIRECTORY_SEPARATOR);
+define('DIR', realpath(__DIR__ . '/../') . DS);
+
 return [
     'settings' => [
 
@@ -85,7 +88,17 @@ return [
         ],
 
         'sleepcloud-slim' => [
-        ]
+        ],
+
+        'swagger' => [
+            'version' => "3.0.1",
+            'output' => 'openapi.json',
+            'api' => [
+                'name' => getenv('APP_NAME'),
+                'version' => "0.1"
+            ]
+        ],
+
 
     ]
 

@@ -7,6 +7,7 @@ const sass   = require('gulp-sass');
 const nano   = require('gulp-cssnano');
 
 const image = require('gulp-image');
+const run = require('child_process').exec;
 
 // application paths
 var config = {
@@ -133,3 +134,11 @@ gulp.task('assets:images', function () {
 gulp.task('assets', ['assets:icons','assets:images']);
 
 gulp.task('default', ['styles', 'scripts', 'assets']);
+
+gulp.task('tool:build-swagger', function (cb) {
+    run('"./vendor/bin/swagger" --bootstrap ./sources/swagger.php -e vendor ./sources/', function (err, stdout, stderr) {
+        console.log(stdout);
+        console.log(stderr);
+        cb(err);
+    });
+});
