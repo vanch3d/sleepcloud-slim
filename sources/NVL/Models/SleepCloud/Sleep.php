@@ -24,7 +24,9 @@ class Sleep
     public $Id;
 
     /**
-     * @OAS\Property()
+     * @OAS\Property(
+     *     format="date"
+     * )
      * @var string
      */
     public $Date;
@@ -36,32 +38,32 @@ class Sleep
     public $Tz;
 
     /**
-     * @OAS\Property()
+     * @OAS\Property(format="date")
      * @var string
      */
     public $From;
 
     /**
-     * @OAS\Property()
+     * @OAS\Property(format="date")
      * @var string
      */
     public $To;
 
     /**
-     * @OAS\Property()
+     * @OAS\Property(format="date")
      * @var string
      */
     public $Sched;
 
     /**
      * @OAS\Property()
-     * @var string
+     * @var float
      */
     public $Hours;
 
     /**
      * @OAS\Property()
-     * @var string
+     * @var float
      */
     public $Rating;
 
@@ -73,37 +75,37 @@ class Sleep
 
     /**
      * @OAS\Property()
-     * @var string
+     * @var integer
      */
     public $Framerate;
 
     /**
      * @OAS\Property()
-     * @var string
+     * @var integer
      */
     public $Snore;
 
     /**
      * @OAS\Property()
-     * @var string
+     * @var float
      */
     public $Noise;
 
     /**
      * @OAS\Property()
-     * @var string
+     * @var integer
      */
     public $Cycles;
 
     /**
      * @OAS\Property()
-     * @var string
+     * @var float
      */
     public $DeepSleep;
 
     /**
      * @OAS\Property()
-     * @var string
+     * @var integer
      */
     public $LenAdjust;
 
@@ -114,20 +116,34 @@ class Sleep
     public $Geo;
 
     /**
-     * @OAS\Property()
-     * @var string
+     * @OAS\Property(
+     *     @OAS\Items(
+     *          ref="#/components/schemas/ActigraphRecord"
+     *      )
+     * )
+     * @var array
      */
     public $Actigraph;
 
     /**
-     * @OAS\Property()
-     * @var string
+     * @OAS\Property(
+     *     @OAS\Items(
+     *          ref="#/components/schemas/EventRecord"
+     *     ),
+     * )
+     * @var array
      */
     public $Events;
 
     /**
-     * @OAS\Property()
-     * @var string
+     * @OAS\Property(
+     *     description="",
+     *     @OAS\Items(
+     *          type="number",
+     *          format="float"
+     *      )
+     * )
+     * @var array
      */
     public $Levels;
 
