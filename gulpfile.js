@@ -49,6 +49,7 @@ var cssList = [
 // list of D3-v3 plugins to combine
 var jsD3v3List = [
     config.bowerDir + '/d3-v3/d3.js',
+    config.bowerDir + '/d3-queue/d3-queue.js',
     config.bowerDir + '/d3-process-map/dist/colorbrewer.js',
     config.bowerDir + '/d3-process-map/dist/geometry.js',
     config.bowerDir + '/cubism/cubism.v1.js',
@@ -57,7 +58,10 @@ var jsD3v3List = [
 
 // list of D3-v4 plugins to combine
 var jsD3v4List = [
-    config.bowerDir + '/d3/d3.js'
+    config.bowerDir + '/d3/d3.js',
+    config.bowerDir + '/DependencyWheel/js/d3.dependencyWheel.js',
+    config.resDir   + '/js/d3/**.js'
+
 ];
 
 // list of font & font-icons to copy
