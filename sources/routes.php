@@ -36,6 +36,9 @@ $app->group('',function() {
     $this->get('/nights/{id}', VisController::class . ':showNight')->setName('vis.night');
     $this->get('/horizon', VisController::class . ':showHorizon')->setName('vis.horizon');
 
+    $this->get('/diet/time', VisController::class . ':showDietTime')->setName('vis.diet.time');
+    $this->get('/diet/staple', VisController::class . ':showDietStaple')->setName('vis.diet.staple');
+
 });
 
 $app->group('/api',function() {
@@ -46,6 +49,8 @@ $app->group('/api',function() {
     // raw data
     $this->get('/records/sleep', APIController::class . ':getSleepData')->setName('api.sleep.records');
     $this->get('/records/mood', APIController::class . ':getMoodData')->setName('api.mood.records');
+    $this->get('/records/mood/tags', APIController::class . ':getMoodTags')->setName('api.mood.tags');
+    $this->get('/records/diet', APIController::class . ':getDietData')->setName('api.diet.records');
 
 });
 
