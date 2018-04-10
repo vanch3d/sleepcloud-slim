@@ -20,9 +20,31 @@ class VisController extends Controller
 
     public function showCalendar(Request $request, Response $response)
     {
-        $rr = $request->getAttribute('route') ;
-        //Debugger::barDump($rr);
         return $this->getView()->render($response, 'visualisation/calendar.twig');
 
     }
+
+    public function showNight(Request $request, Response $response)
+    {
+        return $this->getView()->render($response, 'visualisation/night.twig');
+    }
+
+    public function showHorizon(Request $request, Response $response)
+    {
+        return $this->getView()->render($response, 'visualisation/cubism.twig');
+    }
+
+    public function showDietTime(Request $request, Response $response)
+    {
+        return $this->getView()->render($response, 'visualisation/diet/time.twig');
+
+    }
+
+    public function showDietStaple(Request $request, Response $response)
+    {
+        return $this->getView()->render($response, 'visualisation/diet/staple.twig');
+
+    }
+
+
 }
