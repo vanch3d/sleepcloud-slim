@@ -1,0 +1,83 @@
+{% extends 'base.twig' %}
+
+{% block title %}Diet | Staple{% endblock %}
+
+{% block content %}
+    <div id="controller" class="d-flex p-2 flex-row" style="width: 100%;">
+    </div>
+    <div id="chart" style="width: 100%;">
+    </div>
+
+{% endblock %}
+
+{% block injectCSS %}
+    <style>
+        g.group text {
+            fill: white;
+        }
+    </style>
+{% endblock %}
+
+{% block injectJS %}<script src="/js/d3.v4-bundle.min.js" ></script>
+    <script>
+        $(document).ready(function() {
+            // credits: http://www.redotheweb.com/DependencyWheel/
+
+            let url = "{{ path_for('api.diet.records') }}";
+            d3.json(url, function(error, json) {
+                console.log(json.data);
+
+                // extract all items in a sorted set
+                let allItems = json.data.map((task) => task.items );
+                allItems = [].concat(...allItems);
+                allItems = d3.set(allItems).values();
+                allItems.sort(function(x, y){ return d3.ascending(x, y); });
+                //console.log(allItems);
+
+                // build an index table
+                let indexItems = [];
+                allItems.forEach(function (e,i) {
+                    indexItems[e] = i;
+                });
+                //console.log(indexItems);
+
+                // create a null  matrix
+                let n = allItems.length;
+                let matrix=[];
+                for (let i=0; i < n; i++)
+                {
+                    matrix[i] = new Array(n).fill(0);
+                    // may fail on old browser, use the following
+                    //matrix[i] = Array.apply(null, new Array(n)).map(Number.prototype.valueOf,0);
+                }
+
+                // fill matrix with co-occurrence of food staples
+                json.data.forEach(function (food) {
+                    // close list of food items to parse it
+                    let clone = food.items.slice(0);
+                    while (clone.length>1)
+                    {
+                        let item = clone.shift();
+                        clone.forEach(function (staple) {
+                            let i = indexItems[item];
+                            let j = indexItems[staple];
+                            matrix[i][j] += 1;
+                            matrix[j][i] += 1;
+                        });
+                    }
+
+                });
+                //console.log(matrix);
+
+                let chart = d3.chart.dependencyWheel();
+                d3.select('#chart')
+                    .datum({
+                        packageNames: allItems,
+                        matrix: matrix
+                    })
+                    .call(chart);
+            });
+
+        });
+    </script>
+{% endblock %}
