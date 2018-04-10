@@ -28,7 +28,7 @@ d3.chart = d3.chart || {};
  * @see https://github.com/vanch3d/d3.weeklyHeatMap for complete source and license
  * @see http://bl.ocks.org/tjdecke/5558084 for original inspiration and source
  */
-d3.chart.weekHeatMap = function(options) {
+d3.chart.weeklyHeatMap= function(options) {
 
     var chartWidth = 960;
     var chartHeight = 430;
