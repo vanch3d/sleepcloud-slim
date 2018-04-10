@@ -2,9 +2,38 @@
     <div class="inner">
         <h3 class="masthead-brand">{{ app_name }}</h3>
         <nav class="nav nav-masthead justify-content-center">
+            {#
             <a class="nav-link {{ current_route =='home' ? 'active'}}" href="{{ path_for('home') }}"><i title="home" class="fas fa-home"></i> Home</a>
             <a class="nav-link {{ current_route =='vis.calendar' ? 'active'}}" href="{{ path_for('vis.calendar') }}"><i class="fas fa-calendar-alt"></i> Calendar</a>
-            <a class="nav-link" href="#"><i class="fas fa-info-circle"></i> About</a>
+            #}
+
+            <div class="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
+                <div class="btn-group mr-2" role="group" aria-label="Home">
+                    <a class="nav-link {{ current_route =='home' ? 'active'}}" href="{{ path_for('home') }}">
+                        <i title="home" class="fas fa-home"></i> Home</a>
+                </div>
+                <div class="btn-group mr-2" role="group" aria-label="Sleep">
+                    <button type="button" class="btn" disabled>Sleep</button>
+                    <a class="btn btn-secondary {{ current_route =='vis.calendar' ? 'active'}}" href="{{ path_for('vis.calendar') }}">
+                        <i class="fas fa-calendar-alt"></i></a>
+                    <a class="btn btn-secondary {{ current_route =='vis.horizon' ? 'active'}}" href="{{ path_for('vis.horizon') }}">
+                        <i class="fas fa-chart-area"></i></a>
+                </div>
+                <div class="btn-group mr-2" role="group" aria-label="Diet">
+                    <button type="button" class="btn" disabled>Diet</button>
+                    <a class="btn btn-secondary {{ current_route =='vis.diet.time' ? 'active'}}" href="{{ path_for('vis.diet.time') }}">
+                        <i class="fas fa-th"></i></a>
+                    <a class="btn btn-secondary {{ current_route =='vis.diet.staple' ? 'active'}}" href="{{ path_for('vis.diet.staple') }}">
+                        <i class="fas fa-globe"></i></a>
+                </div>
+                <div class="btn-group mr-2" role="group" aria-label="Mood">
+                    <button type="button" class="btn btn-secondary">8</button>
+                </div>
+                <div class="btn-group" role="group" aria-label="Help">
+                    <a class="btn nav-link" href="#"><i class="fas fa-info-circle"></i> About</a>
+                </div>
+            </div>
+
         </nav>
     </div>
 </header>
