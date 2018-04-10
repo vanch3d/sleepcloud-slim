@@ -41,16 +41,6 @@ $horizon-value: coral;
     display: block;
   }
 
-  .title {
-    left: -75px;
-  }
-
-  .value {
-    right: 0;
-    color: $horizon-value;
-    font-weight: bolder;
-  }
-
   .title, .value {
     bottom: 0;
     line-height: 30px;
@@ -59,6 +49,22 @@ $horizon-value: coral;
     text-shadow: 0 1px 0 rgba(255,255,255,.5);
     white-space: nowrap;
   }
+
+  .title {
+    left: 0;
+  }
+
+  .value {
+    //right: 0;
+    color: $horizon-value;
+    background-color: rgba( $app-background-color, .7 );
+    font-weight: bolder;
+    height: 100%;
+    //padding: 2px;
+    margin-left: 15px;
+  }
+
+
 
 }
 
