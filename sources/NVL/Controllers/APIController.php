@@ -276,6 +276,52 @@ class APIController extends Controller
         ], 200);
     }
 
+    private function parseMoodData()
+    {
+        $cache = $this->getFromDropBox(getenv("IMOOD_DATAFILE"), ".zip");
+        $hash = basename($cache, ".zip");
+
+        $zip = new ZipArchive;
+        $res = $zip->open($cache);
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $metadata['list'][] = $zip->statIndex($i);
+        }
+
+        $metadata = [];
+        $data = [];
+        $tags = [];
+
+        $im_string = $zip->getFromName("/backup.json");
+        $data = json_decode($im_string, true);
+
+        foreach ($data as &$records) {
+            $alltags = [];
+            foreach ($records['moodTags'] as $moodtag) {
+                $name = $moodtag['tagName'];
+                if (!isset($tags[$name])) {
+                    $tags[$name] = $moodtag;
+                }
+                $alltags[] = $name;
+            }
+
+            // reformat date
+            $date = $records['date'];
+            $date = new JSONDateTime($date,new DateTimeZone("Europe/London"));
+            $records['date'] = $date;
+
+            unset($records['moodTags']);
+            $records['moodTags'] = $alltags;
+
+        }
+
+        $metadata['hash'] = $hash;
+        $metadata['tags'] = $tags;
+        return [
+            'data' => $data,
+            'metadata' => $metadata
+        ];
+    }
+
     /**
      *
      * @OAS\Get(
@@ -326,43 +372,131 @@ class APIController extends Controller
      */
     public function getMoodData(Request $request, Response $response)
     {
-        $cache = $this->getFromDropBox(getenv("IMOOD_DATAFILE"), ".zip");
-        $hash = basename($cache, ".zip");
+        $json = $this->parseMoodData();
+        return $response->withJson($json, 200);
 
-        $zip = new ZipArchive;
-        $res = $zip->open($cache);
-        for ($i = 0; $i < $zip->numFiles; $i++) {
-            $metadata['list'][] = $zip->statIndex($i);
-        }
+    }
 
-        $metadata = [];
-        $data = [];
-        $tags = [];
 
-        $im_string = $zip->getFromName("/backup.json");
-        $data = json_decode($im_string, true);
-
-        foreach ($data as &$records) {
-            $alltags = [];
-            foreach ($records['moodTags'] as $moodtag) {
-                $name = $moodtag['tagName'];
-                if (!$tags[$name]) {
-                    $tags[$name] = $moodtag;
-                }
-                $alltags[] = $name;
-            }
-            unset($records['moodTags']);
-            $records['moodTags'] = $alltags;
-
-        }
-
-        $metadata['hash'] = $hash;
-        $metadata['tags'] = $tags;
-
+    /**
+     * @OAS\Get(
+     *     path="/records/mood/tags",
+     *     summary="Get the description tags from the mood records",
+     *     tags={"iMood"},
+     *     description="",
+     *     operationId="getMoodTags",
+     *     @OAS\Response(
+     *          response=200,
+     *          description="Successful operation",
+     *          @OAS\MediaType(
+     *              mediaType="application/json",
+     *              @OAS\Schema(
+     *                  @OAS\Property(
+     *                      property="data",
+     *                      type="array",
+     *                      @OAS\Items(
+     *                          ref="#/components/schemas/MoodTag"
+     *                      ),
+     *                  ),
+     *                  @OAS\Property(
+     *                      property="metadata",
+     *                      type="object",
+     *                      @OAS\Property(
+     *                          property="hash",
+     *                          type="string"
+     *                      ),
+     *                  ),
+     *                  @OAS\Property(property="errors",type="object"),
+     *              ),
+     *          ),
+     *     )
+     * )
+     *
+     * @param Request  $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getMoodTags(Request $request, Response $response)
+    {
+        $json = $this->parseMoodData();
         return $response->withJson([
-            'data' => $data,
-            'metadata' => $metadata
+            'data' => $json['metadata']['tags']
         ], 200);
+    }
 
+    /**
+     * @OAS\Get(
+     *     path="/records/diet",
+     *     summary="Get the diet from the mood records",
+     *     tags={"iMood"},
+     *     description="",
+     *     operationId="getDietData",
+     *     @OAS\Response(
+     *          response=200,
+     *          description="Successful operation",
+     *          @OAS\MediaType(
+     *              mediaType="application/json",
+     *              @OAS\Schema(
+     *                  @OAS\Property(
+     *                      property="data",
+     *                      type="array",
+     *                      @OAS\Items(
+     *                          ref="#/components/schemas/Diet"
+     *                      ),
+     *                  ),
+     *                  @OAS\Property(
+     *                      property="metadata",
+     *                      type="object",
+     *                      @OAS\Property(
+     *                          property="hash",
+     *                          type="string"
+     *                      ),
+     *                  ),
+     *                  @OAS\Property(property="errors",type="object"),
+     *              ),
+     *          ),
+     *     )
+     * )
+     *
+     * @param Request  $request
+     * @param Response $response
+     * @return Response
+     */
+    public function getDietData(Request $request, Response $response)
+    {
+        $keywords = array("#breakfast","#lunch","#dinner","#snacks");
+
+        $json = $this->parseMoodData();
+        $data = [];
+
+        foreach ($json['data'] as $record) {
+            $comment = $record['moodDescription']['comment'] ?? "";
+            $arr = explode("\n",$comment);
+
+            foreach ($arr as $item)
+            {
+                $match = array_intersect( explode(' ', $item), $keywords);
+                if (count($match) > 0)
+                {
+                    $newrec = array(
+                        'type' => $match[0],
+                        'date' => $record['date'],
+                        'items' => array()
+                    );
+                    $regex = '~(#\w+)~';
+                    if (preg_match_all($regex, $item,$matches, PREG_PATTERN_ORDER)) {
+                        foreach ($matches[1] as $word) {
+                            if ($word !== $match[0])
+                                $newrec['items'][] = ltrim($word,"#");
+                        }
+                    }
+                    Debugger::barDump($newrec);
+                    $data[] = $newrec;
+                }
+            }
+        }
+        return $response->withJson(array(
+            'data' => $data,
+        ), 200);
     }
 }
