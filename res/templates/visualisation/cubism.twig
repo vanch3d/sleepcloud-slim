@@ -5,7 +5,7 @@
 {% block content %}
     <div id="controller" class="d-flex p-2 flex-row" style="width: 100%;">
     </div>
-    <div id="mapdiv" style="width: 960px; margin-left: 75px">
+    <div id="mapdiv" style="width: 960px;">
     </div>
     <div id="legend" style="width: 100%;"></div>
 {% endblock %}
@@ -13,174 +13,283 @@
 {% block injectCSS %}
     <style>
         .text-center {
-            text-align: left !important;
+            /*text-align: left !important;*/
         }
+
         .cover-container {
-            max-width: none;
+            /*max-width: none;*/
         }
 
         .horizon {
             overflow: visible !important;
         }
-
-        .horizon .title {
-            left: -75px !important;
-        }
-
-        .axis path, .axis line {
-            fill: none;
-            stroke: #000;
-            shape-rendering: crispEdges;
-        }
-
-        .axis {
-            background-image: linear-gradient(top, #fff 0%, rgba(255,255,255,0) 100%);
-            background-image: -o-linear-gradient(top, #fff 0%, rgba(255,255,255,0) 100%);
-            background-image: -moz-linear-gradient(top, #fff 0%, rgba(255,255,255,0) 100%);
-            background-image: -webkit-linear-gradient(top, #fff 0%, rgba(255,255,255,0) 100%);
-            background-image: -ms-linear-gradient(top, #fff 0%, rgba(255,255,255,0) 100%);
-            top: 0px;
-            padding: 0 0 12px 0;
-            font: 10px sans-serif;
-        }
-
-        .axis text {
-            color: #fff;
-            -webkit-transition: fill-opacity 250ms linear;
-        }
-
-        .axis path {
-            display: none;
-        }
-
-        .axis line {
-            stroke: #000;
-            shape-rendering: crispEdges;
-        }
-
-        .horizon {
-            border-top: solid 1px #000;
-            border-bottom: solid 1px #000;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .horizon + .horizon {
-            border-top: none;
-        }
-
-        .horizon canvas {
-            display: block;
-        }
-
-        .horizon .title,
-        .horizon .value {
-            bottom: 0;
-            line-height: 30px;
-            margin: 0 6px;
-            position: absolute;
-            text-shadow: 0 1px 0 rgba(255,255,255,.5);
-            white-space: nowrap;
-        }
-
-        .horizon .title {
-            left: 0;
-        }
-
-        .horizon .value {
-            right: 0;
-            color: coral;
-            font-weight: bolder;
-        }
-
-        .line {
-            background: #000;
-            opacity: .2;
-            z-index: 2;
-        }
     </style>
 {% endblock %}
 
 {% block injectJS %}
-    <script src="/js/d3.v3-bundle.js" ></script>
+    <script src="/js/d3.v3-bundle.js"></script>
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
+            // credits (see https://bost.ocks.org/mike/cubism/intro/demo-stocks.html)
+            // credits (see https://square.github.io/cubism/demo/)
 
-            const   DATA_INTERVAL = 5,   // measurement interval for the actigraph (in minutes)
-                    DATA_CUTOFF = 0.07,  // near-zero cut-off point for actigraph data
-                    DATA_UNSET = -0.01;  // data not recorded
+            // @todo[vanch3d] The rule/line is not working properly (out of div); to redo
+            // @todo[vanch3d] Still a bug in computing date and time of metrics
 
-            var fmtTitle = d3.time.format("%a %b %e");
-            var fmtId= d3.time.format("%H.%M");
-            var fmtYr= d3.time.format("%Y-%m-%d");
+            const DATA_INTERVAL = 5,   // measurement interval for the actigraph (in minutes)
+                DATA_CUTOFF = 0.07,  // near-zero cut-off point for actigraph data
+                DATA_UNSET = -0.01;  // data not recorded
+
+            let fmtTitle = d3.time.format("%a %b %e"),
+                fmtId = d3.time.format("%H:%M"),
+                fmtYr = d3.time.format("%Y-%m-%d"),
+                formatHour = d3.time.format("%H"),
+                newFormat = d3.time.format("%Y-%m-%d %H:%M");
+
+            let now = new Date();
+            let context = cubism.context()
+                .serverDelay(now - d3.time.hour.offset(d3.time.day(now), -12))   // delay server to 12noon previous day
+                //.serverDelay(14 * 60 * 1000)
+                .step(1 * 60 * 1000)    // 1 minutes per value
+                .size(960)              // fetch 960 values (ie 16 hours)
+                .stop();
+
+            let axis = context.axis()
+                .orient("top")
+                .ticks(d3.time.minutes, 60)     // a tick every hour
+                .tickFormat(d3.time.format("%H:%M"));
+
+            d3.select("#mapdiv").call(function (div) {
+
+                div.append("div")
+                    .attr("class", "axis sticky-top")
+                    .call(axis);
+
+                div.append("div")
+                    .attr("class", "rule")
+                    .call(context.rule());
+
+                let ret = [];
+                let url = "{{ path_for('api.sleep.records') }}";
+
+                d3.queue()
+                    .defer(d3.json, url)
+                    .await(function (error, file1, file2) {
+                        if (error) {
+                            console.error('Oh dear, something went wrong: ' + error);
+                        }
+                        else {
+                            console.log(file1, file2);
+                            let data = file1.data;
+
+                            $.each(data, function (i, d) {
+                                let sonar = (d.Comment.indexOf("#sonar") !== -1);
+                                //console.log(d.Date,sonar);
+                                let h1 = createActigraphMetric(new Date(d.From), d.Actigraph, sonar);
+                                let h2 = createSleepPhaseMetric(new Date(d.From), d.Events);
+                                if (h1) {
+                                    h1.type = "actigraph";
+                                    ret.push(h1);
+                                }
+                                if (h2) {
+                                    h2.type = "phases";
+                                    ret.push(h2);
+                                }
+                            });
+
+                            let horizon = context.horizon();
+                            div.selectAll(".horizon")
+                                .data(ret.filter(function (d) {
+                                    return true;
+                                    return d.type === "actigraph";
+                                }))
+                                .enter().append("div")
+                                .attr("class", "horizon")
+                                .call(horizon.height(40).extent([-10, 10]));
+
+                        }
+                    });
+            });
+
+            context.on("focus", function (i) {
+                $(".line").css("margin-left", $("#mapdiv").offset().left);
+                d3.selectAll(".value").style("left", i == null ? null : i + "px");
+            });
 
             /**
-             * Crerate a cube metrics based on sleep data extracted from the app
-             * @todo[vanch3d] Data get out-of-sync, due to uneven timeframe. Need an event-based picker
+             * Create metrics based on sleep phase data extracted from the SleepCloud app
              */
-            function sleepMetric(date,dataset) {
-                var values = [],
+            function createSleepPhaseMetric(date, dataset) {
+                let values = [],
                     last = NaN;
 
-                // set midnight on day of data collection (From attribute)
-                var d1 = d3.time.day(date);
+                if (!dataset) return null;
+                //console.log("dataset",dataset);
 
-                // @todo[vanch3d] check if clone is really necessary
-                var newset = $.extend(true, [],dataset);
+                let filtered = dataset.filter(function (d) {
+                    return $.inArray(d.id, [
+                        "LIGHT_START",
+                        "LIGHT_END",
+                        "DEEP_START",
+                        "DEEP_END",
+                        "REM_START",
+                        "REM_END"]) !== -1;
+                });
 
-                var metric = context.metric(function(start, stop, step, callback) {
+                let phases = d3.nest()
+                    .key(function (h) {
+                        return newFormat(new Date(h.date));
+                    })
+                    .entries(filtered);
+
+                //console.log("phases",phases);
+
+                function trickDate(a, b) {
+                    let dKey = new Date(a);
+                    let dStart = new Date(b);
+
+                    dKey.setFullYear(
+                        dStart.getFullYear(),
+                        dStart.getMonth(),
+                        dStart.getDate()
+                    );
+
+                    if (dKey.getHours() < 20)
+                        dKey.setDate(dKey.getDate() + 1);
+                    return dKey;
+
+                }
+
+                let metrics = context.metric(function (start, stop, step, callback) {
                     start = +start;
                     stop = +stop;
 
                     if (isNaN(last)) last = start;
 
                     // get the current (first) data point
-                    var current = newset.shift();
-                    var interpolations = [];
+                    let current = phases.shift();
+                    let interpolations = null;
+                    //  console.log(current);
+
+                    if (current) {
+                        let dKey = trickDate(current.key, start);
+                        current.newkey = dKey;
+                        //console.log("metrics",new Date(last),new Date(current.key),dKey);
+                    }
 
                     // start ticking
                     while (last < stop) {
-                        if (current)
-                        {
+                        // if tick corresponds to a data record
+                        if (current && (new Date(current.newkey) - last) === 0) {
+                            //console.log("tick",new Date(last),current);
+                            let lastItem = [...current.values].pop();
+                            let val = NaN;
+                            if (lastItem.id.includes("LIGHT")) val = -.5;
+                            else if (lastItem.id.includes("REM")) val = -3;
+                            else if (lastItem.id.includes("DEEP")) val = -7;
+
+                            values.push(val);
+                            interpolations = val;
+                            if (lastItem.id.includes("END")) interpolations = NaN;
+
+                            current = phases.shift();
+                            if (current) {
+                                let dKey = trickDate(current.key, start);
+                                current.newkey = dKey;
+                                //console.log("metrics",new Date(last),new Date(current.key),dKey);
+                            }
+
+                        }
+                        else if (interpolations) {
+                            values.push(interpolations);
+                        }
+                        else
+                            values.push(NaN);
+
+                        last += step;
+                    }
+                    callback(null, values = values.slice((start - stop) / step));
+
+                }, fmtTitle(date));
+
+                return metrics;
+
+            }
+
+
+            /**
+             * Create metrics based on actigraph data extracted from the SleepCloud app
+             */
+            function createActigraphMetric(date, dataset, sonar) {
+                let values = [],
+                    last = NaN;
+
+                // set midnight on day of data collection (From attribute)
+                let d1 = d3.time.day(date);
+
+                // @todo[vanch3d] check if clone is really necessary
+                let newset = $.extend(true, [], dataset);
+
+                let mMax = d3.max(newset, function (d) {
+                    return d.value
+                });
+                let scale = d3.scale.linear()
+                    .domain([0, mMax])
+                    .range([0, 7]);
+                //console.log(date,mMax);
+
+                let metric = context.metric(function (start, stop, step, callback) {
+                    start = +start;
+                    stop = +stop;
+
+                    if (isNaN(last)) last = start;
+
+                    // get the current (first) data point
+                    let current = newset.shift();
+                    let interpolations = [];
+
+                    // start ticking
+                    while (last < stop) {
+                        if (current) {
                             // compute timestamp of current data point
-                            var t2 = fmtYr(new Date(start)) + " " + current.id;
-                            var d2 = new Date(t2);
+                            let t2 = fmtYr(new Date(start)) + " " + current.id;
+                            let d2 = new Date(t2);
                             // offset day if hours before axis start
-                            if (d2.getHours()<20)
-                                d2 = d3.time.day.offset(d2,+1);
+                            if (d2.getHours() < 20)
+                                d2 = d3.time.day.offset(d2, +1);
 
                             // if tick corresponds to a data record
-                            if ((d2-last)===0)
-                            {
-                                var val = current.value;
+                            if ((d2 - last) === 0) {
+                                let val = current.value;
+
+                                //if (sonar) val = val * 10;
+                                val = scale(val);
 
                                 // mark unset/awake values as negative
-                                if (val <= DATA_UNSET) val = -1.5;
-                                else if (val <= DATA_CUTOFF) val = NaN;
+                                if (val <= DATA_UNSET) val = -5;
+                                //else if (val <= DATA_CUTOFF) val = NaN;
 
                                 values.push(val);
                                 current = newset.shift();
 
                                 // interpolation
-                                while(interpolations.length > 0) interpolations.pop();
+                                while (interpolations.length > 0) interpolations.pop();
                                 /*if (current)
                                 {
-                                    var val2 = current.value;
-                                    var interpolator = d3.interpolateNumber(val, val2);
-                                    interpolations = d3.quantize(interpolator,7);
-                                    interpolations.pop();
-                                    interpolations.shift();
+                                let val2 = current.value;
+                                let interpolator = d3.interpolateNumber(val, val2);
+                                interpolations = d3.quantize(interpolator,7);
+                                interpolations.pop();
+                                interpolations.shift();
 
                                 }*/
-                                while(interpolations.length < DATA_INTERVAL) {
+                                while (interpolations.length < DATA_INTERVAL) {
                                     // @todo[vanch3d] Try linear or spline interpolation
                                     interpolations.push(val);
                                 }
-
                             }
-                            else if (interpolations.length > 0)
-                            {
-                                interp = interpolations.shift();
+                            else if (interpolations.length > 0) {
+                                let interp = interpolations.shift();
                                 values.push(interp);
                             }
                             else
@@ -194,89 +303,8 @@
                 return metric;
             }
 
-            var now = new Date();
-            var context = cubism.context()
-                .serverDelay(now - d3.time.hour.offset(d3.time.day(now),-12))   // delay server to 12noon previous day
-                //.serverDelay(14 * 60 * 1000)
-                .step(1 * 60 * 1000)    // 1 minutes per value
-                .size(960)              // fetch 960 values (ie 16 hours)
-                .stop();
-
-            // for debugging purpose
-            var foo = random("foo");
-
-            var axis = context.axis()
-                .orient("top")
-                .ticks(d3.time.minutes, 60)     // a tick every hour
-                .tickFormat(d3.time.format("%H:%M"));
-
-            d3.select("#mapdiv").call(function(div) {
-
-                div.append("div")
-                    .attr("class", "axis")
-                    .call(axis);
-
-                div.append("div")
-                    .attr("class", "rule")
-                    .call(context.rule());
-
-                var ret = [/*foo*/];
-                var url = "{{ path_for('api.sleep.records') }}";
-                d3.json(url, function(error, json) {
-                    var data = json.data;
-                    $.each(data,function(i,d){
-                        var t= sleepMetric(new Date(d.From),d.Actigraph);
-                        ret.push(t);
-                    });
-                    var horizon = context.horizon();
-
-                    div.selectAll(".horizon")
-                        .data(ret)
-                        .enter().append("div")
-                        .attr("class", "horizon")
-                        .call(horizon.height(40).extent([-6, 6]));
-                });
-            });
-
-            context.on("focus", function(i) {
-                $(".line").css("margin-left",$("#mapdiv").offset().left);
-                d3.selectAll(".value").style("left", i == null ? null : i + "px");
-            });
-
-            // from the stock example (see https://bost.ocks.org/mike/cubism/intro/demo-stocks.html)
-            function stock(name) {
-                var format = d3.time.format("%d-%b-%y");
-                return context.metric(function(start, stop, step, callback) {
-                    d3.csv("assets/" + name + ".csv", function(rows) {
-                        rows = rows.map(function(d) { return [format.parse(d.Date), +d.Open]; }).filter(function(d) { return d[1]; }).reverse();
-                        var date = rows[0][0], compare = rows[400][1], value = rows[0][1], values = [value];
-                        rows.forEach(function(d) {
-                            while ((date = d3.time.day.offset(date, 1)) < d[0]) values.push(value);
-                            values.push(value = (d[1] - compare) / compare);
-                        });
-                        callback(null, values.slice(-context.size()));
-                    });
-                }, name);
-            }
-
-            // from the main demo (see https://square.github.io/cubism/demo/)
-            function random(name) {
-                var value = 0,
-                    values = [],
-                    i = 0,
-                    last;
-                return context.metric(function(start, stop, step, callback) {
-                    start = +start, stop = +stop;
-                    if (isNaN(last)) last = start;
-                    while (last < stop) {
-                        last += step;
-                        value = Math.max(-10, Math.min(10, value + .8 * Math.random() - .4 + .2 * Math.cos(i += .2)));
-                        values.push(value);
-                    }
-                    callback(null, values = values.slice((start - stop) / step));
-                }, name);
-            }
 
         });
     </script>
 {% endblock %}
+
