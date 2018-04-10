@@ -17,6 +17,8 @@
     "d3": "^4.13.0",
     "cubism": "CleverCloud/cubism#^1.6.1",
     "d3-interpolate": "https://github.com/d3/d3-interpolate/releases/download/v1.1.6/d3-interpolate.zip",
-    "swagger-ui": "swagger-api/swagger-ui#^3.13.2"
+    "swagger-ui": "swagger-api/swagger-ui#^3.13.2",
+    "DependencyWheel": "fzaninotto/DependencyWheel#master",
+    "d3-queue": "^3.0.7"
   }
 }
