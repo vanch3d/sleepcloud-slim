@@ -5,19 +5,25 @@
 {% block content %}
     <div id="controller" class="d-flex p-2 flex-row" style="width: 100%;">
         <div class="w-50 p-3">
-            <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                <label class="btn btn-secondary active">
-                    <input type="radio" name="options" value="rating" autocomplete="off" checked> Rating
-                </label>
-                <label class="btn btn-secondary">
-                    <input type="radio" name="options" value="hours" autocomplete="off"> Duration
-                </label>
-                <label class="btn btn-secondary">
-                    <input type="radio" name="options" value="deep" autocomplete="off"> Deep
-                </label>
+            <div data-toggle="buttons">
+                <div class="btn-group btn-group-toggle" >
+                    <label class="btn btn-secondary active">
+                        <input type="radio" name="options" value="rating" autocomplete="off" checked> Rating
+                    </label>
+                    <label class="btn btn-secondary">
+                        <input type="radio" name="options" value="hours" autocomplete="off"> Duration
+                    </label>
+                    <label class="btn btn-secondary">
+                        <input type="radio" name="options" value="deep" autocomplete="off"> Deep
+                    </label>
+                </div>
+                <div class="btn-group btn-group-toggle" >
+                    <label class="btn btn-secondary">
+                        <input type="radio" name="options" value="fruit" autocomplete="off" checked> Fruit & Veg
+                    </label>
+                </div>
             </div>
         </div>
-        <div class="w-50 p-3">type 2 </div>
     </div>
     <div id="mapdiv" style="width: 100%;"></div>
     <div id="legend" style="width: 100%;"></div>
@@ -29,81 +35,136 @@
             overflow-x: auto;
             overflow-y: hidden;
         }
+        .cover-container {
+            overflow-x: hidden;
+        }
     </style>
 {% endblock %}
 
 {% block injectJS %}
-    <script src="js/d3.v3-bundle.min.js" ></script>
+    <script src="/js/d3.v3-bundle.min.js" ></script>
     <script>
         $(document).ready(function() {
+            //$.key('ctrl+c', function() {});
 
-            $.key('ctrl+c', function() {
-                alert('ctrl shift a');
-            });
+            const mondayWeek = true;
+            const showWeekSummary = false;
 
-             var width = 960,
+            let getDay = function(d) {
+                return (mondayWeek)? (d.getDay() + 6) % 7 : d.getDay();
+            };
+            let getWeek = function(d) {
+                ft = (mondayWeek)? d3.time.format("%W") : d3.time.format("%U");
+                return ft(d);
+            };
+
+            let width = 960,
                 height = 136,
                 cellSize = 17;
 
-            function pathMonth(t0) {
-                var t1 = new Date(t0.getFullYear(), t0.getMonth() + 1, 0),
-                    d0 = t0.getDay(), w0 = d3.time.weekOfYear(t0),
-                    d1 = t1.getDay(), w1 = d3.time.weekOfYear(t1);
-                return "M" + (w0 + 1) * cellSize + "," + d0 * cellSize
-                    + "H" + w0 * cellSize + "V" + 7 * cellSize
-                    + "H" + w1 * cellSize + "V" + (d1 + 1) * cellSize
-                    + "H" + (w1 + 1) * cellSize + "V" + 0
-                    + "H" + (w0 + 1) * cellSize + "Z";
-            }
+            let color = d3.scale.quantize()
+                .domain([0, 5])
+                .range(["#a50026", "#d73027", "#f46d43", "#fdae61", "#fee08b", "#ffffbf", "#d9ef8b", "#a6d96a", "#66bd63", "#1a9850", "#006837"]);
 
-            var url = "{{ path_for('api.sleep.records') }}";
-            d3.json(url, function(error, json) {
-                console.log(json);
-                if (error) throw error;
+            let colorH = d3.scale.quantize()
+                .domain([0, 14])
+                .range(["#a50026", "#d73027", "#f46d43", "#fdae61", "#fee08b", "#ffffbf", "#d9ef8b", "#a6d96a", "#66bd63", "#1a9850", "#006837"]);
 
-                var csv = json.data;
+            let ft = d3.time.format("%Y-%m-%d");
 
-                var ft = d3.time.format("%Y-%m-%d");
-                var data = d3.nest()
+            d3.queue()
+                .defer(d3.json, "{{ path_for('api.sleep.records') }}")
+                .defer(d3.json, "{{ path_for('api.diet.records') }}")
+                .defer(d3.json, "{{ path_for('api.diet.nutrient') }}")
+                .await(function (error, sleep, food, info) {
+                    if (error) throw error;
+                    console.log("processing data ...");
+
+                    let data = wrangleData(sleep.data,food.data, info.data);
+                    createChart(data);
+
+                });
+
+            function wrangleData(sleep, food, info)
+            {
+                const foodType = info.reduce( (arr, item) => {
+                    arr[item.id] = item;
+                    return arr;
+                } , {});
+
+                let sleepData = d3.nest()
                     .key(function(d) {
                         return ft(new Date(d.To));
                     })
                     .rollup(function(d) {
                         // @todo[vanch3d] use average/sum?
-                        var hours = +d[0].Hours,
+                        let hours = +d[0].Hours,
                             adjust = +d[0].LenAdjust,
                             sleep = (hours*60 + adjust)/60,
                             dd = +d[0].DeepSleep,
                             deep = sleep * (dd<0?NaN:dd);
 
-
                         return {
                             rating : +d[0].Rating,
                             sleep  : +(sleep.toFixed(2)),
-                            deep   : +(deep.toFixed(2))
+                            deep   : +(deep.toFixed(2)),
+                            id     : d[0].Id
                         }; })
-                    .map(csv);
-                console.log(data);
+                    .map(sleep);
+                //console.log(data);
 
-                var max = {
+                let foodData = d3.nest()
+                    .key(function(d) {
+                        return ft(new Date(d.date));
+                    })
+                    .rollup(function(d) {
+
+                        let allItems = d.map( item => item.items );
+                        allItems = [].concat(...allItems);
+                        allItems = allItems.map(
+                            food => (foodType[food]) ? foodType[food].group : null);
+                        return {
+                            items: d3.nest()
+                                .key(function(d){return d;})
+                                .rollup(function(v){ return v.length;})
+                                .map(allItems)
+
+                        };
+                    })
+                    .map(food);
+                //console.log(data2);
+
+                for (let key in foodData)
+                {
+                    if (sleepData[key])
+                        sleepData[key].fruit = foodData[key].items.FRUITVEG;
+                    else
+                        sleepData[key] = { fruit: foodData[key].items.FRUITVEG};
+                }
+
+                return sleepData;
+            }
+
+            function createChart(data)
+            {
+                let max = {
                     rating: d3.max(d3.values(data),function(r){ return r.rating}),
                     //hours: d3.max(d3.values(data),function(r){ return r.hours}),
                     sleep: d3.max(d3.values(data),function(r){ return r.sleep})
                 };
-                console.log(max);
+                //console.log("max",max);
+                let yExtent = d3.extent(d3.keys(data), function(d) { return ft.parse(d).getFullYear(); });
 
-                var yExtent = d3.extent(d3.keys(data), function(d) { return ft.parse(d).getFullYear(); });
-
-                var svg = d3.select("#mapdiv")
+                let svgChart = d3.select("#mapdiv")
                     .selectAll("svg")
                     .data(d3.range(yExtent[0], yExtent[1]+1))
                     .enter().append("svg")
                     .attr("width", width)
-                    .attr("height", height)
+                    .attr("height", height + (showWeekSummary ? cellSize + 2 : 0))
                     .append("g")
                     .attr("transform", "translate(" + ((width - cellSize * 53) / 2) + "," + (height - cellSize * 7 - 1) + ")");
 
-                svg.append("text")
+                svgChart.append("text")
                     .attr("transform", "translate(-6," + cellSize * 3.5 + ")rotate(-90)")
                     .attr("font-family", "sans-serif")
                     .attr("font-size", 12)
@@ -111,7 +172,7 @@
                     .attr("text-anchor", "middle")
                     .text(function(d) { return d; });
 
-                var rect = svg.append("g")
+                let svgCard = svgChart.append("g")
                     .attr("fill", "#fff8")
                     .attr("stroke", "#ccc")
                     .selectAll("rect")
@@ -119,11 +180,28 @@
                     .enter().append("rect")
                     .attr("width", cellSize)
                     .attr("height", cellSize)
-                    .attr("x", function(d) { return d3.time.weekOfYear(d) * cellSize; })
-                    .attr("y", function(d) { return d.getDay() * cellSize; })
+                    //.attr("x", function(d) { return d3.time.weekOfYear(d) * cellSize; })
+                    .attr("x", function(d) { return getWeek(d) * cellSize; })
+                    //.attr("y", function(d) { return d.getDay() * cellSize; })
+                    .attr("y", function(d) { return getDay(d) * cellSize; })
                     .datum(d3.time.format("%Y-%m-%d"));
 
-                svg.append("g")
+                if (showWeekSummary)
+                {
+                    svgChart.append("g")
+                        .attr("fill", "#fff8")
+                        .attr("stroke", "#ccc")
+                        .selectAll("rect")
+                        .data(function(d) { return d3.time.weeks(new Date(d, 0, 1), new Date(d + 1, 0, 1)); })
+                        .enter().append("rect")
+                        .attr("width", cellSize)
+                        .attr("height", cellSize)
+                        .attr("x", function(d) { return getWeek(d) * cellSize; })
+                        .attr("y", function(d) { return 7 * cellSize + 2; })
+                        .attr('title',function (d) { console.log(d)});
+                }
+
+                svgChart.append("g")
                     .attr("fill", "none")
                     .attr("stroke", "#000")
                     .selectAll("path")
@@ -131,97 +209,109 @@
                     .enter().append("path")
                     .attr("d", pathMonth);
 
-                var color = d3.scale.quantize()
-                    .domain([0, 5])
-                    .range(["#a50026", "#d73027", "#f46d43", "#fdae61", "#fee08b", "#ffffbf", "#d9ef8b", "#a6d96a", "#66bd63", "#1a9850", "#006837"]);
 
-                var colorH = d3.scale.quantize()
-                    .domain([0, 14])
-                    .range(["#a50026", "#d73027", "#f46d43", "#fdae61", "#fee08b", "#ffffbf", "#d9ef8b", "#a6d96a", "#66bd63", "#1a9850", "#006837"]);
-
-                function updateHeatMap(a){
-
-                    rect.filter(function(d) { return d in data; })
-                        .attr("fill", function(d) {
-                            switch (a){
-                                case 'deep' :
-                                    return colorH(data[d].deep);
-                                case 'hours' :
-                                    return colorH(data[d].sleep);
-                                case 'rating':
-                                default:
-                                    return color(data[d].rating);
-                            }
-                        })
-                        .append("title")
-                        .text(function(d) { return d + ": " + JSON.stringify(data[d]); });
-                }
-
-                $( "input[name='options']" ).change(function(){
-                    var res = $( "input[name='options']:checked" ).val();
-                    updateHeatMap(res);
-                    updateLegend(res)
-                });
-
-                var svg2 = d3.select("#legend")
+                let svgLegend = d3.select("#legend")
                     .append("svg")
                     .attr("width", width)
                     .attr("height", 40)
                     .append("g");
 
-                function updateLegend(a){
-                    var legendX = 50; //x Position for legend
-                    var legendY = 10; //y position for legend
+                updateHeatMap(svgCard,'rating',data);
+                updateLegend(svgLegend,'rating');
 
-                    var clr = null;
-                    switch (a){
-                        case 'rating':
-                            clr = color;
-                            break;
-                        case 'hours' :
-                        default:
-                            clr = colorH;
-                            break;
-                    }
+                $("input[name='options']" ).change(function(){
+                    let option = $( "input[name='options']:checked" ).val();
+                    updateHeatMap(svgCard,option,data);
+                    updateLegend(svgLegend,option);
+                });
 
-                    console.log(a,clr.range());
-                    svg2.selectAll('.legend').remove();
+            }
 
-                    //Prepare Legend
-                    svg2.selectAll('.legend')
-                        .data(clr.range())
-                        .enter()
-                        .append('rect')
-                        .attr('class','legend')
-                        .attr('width',11)
-                        .attr('height',11)
-                        .attr('x',function(d,i){ return legendX + i*13; })
-                        .attr('y',legendY)
-                        .attr('fill',function(d){ return d; });
+            function updateHeatMap(rect,a,data){
 
-                    svg2.append('text')
-                        .attr('class','legend')
-                        .attr("fill", "#fff")
-                        .attr('x', legendX - 35)
-                        .attr('y',legendY + 10)
-                        .text('Low');
+                let r = rect.filter(function(d) { return d in data; })
+                    .on("dblclick",function(d){
+                        let url = "{{ path_for('vis.night',{id:''}) }}";
+                        console.log(data[d],url);
+                        url += data[d].id;
+                        //$(location).attr('href', url);
+                        window.location = url;
+                    })
+                    .attr("fill", function(d) {
+                        switch (a){
+                            case 'fruit' :
+                                return color(data[d].fruit);
+                            case 'deep' :
+                                return colorH(data[d].deep);
+                            case 'hours' :
+                                return colorH(data[d].sleep);
+                            case 'rating':
+                            default:
+                                return color(data[d].rating);
+                        }
+                    })
+                    .append("title")
+                    .text(function(d) { return d + ": " + JSON.stringify(data[d]); });
 
-                    svg2.append('text')
-                        .attr('class','legend')
-                        .attr("fill", "#fff")
-                        .attr('x', legendX + clr.range().length*13+5)
-                        .attr('y',legendY + 10)
-                        .text('High Quality');
+            }
 
+            function updateLegend(legend,a){
+                let legendX = 50; //x Position for legend
+                let legendY = 10; //y position for legend
+
+                let clr = null;
+                switch (a){
+                    case 'rating':
+                        clr = color;
+                        break;
+                    case 'hours' :
+                    default:
+                        clr = colorH;
+                        break;
                 }
 
-                updateHeatMap('rating');
-                updateLegend('rating')
+                //console.log(a,clr.range());
+                legend.selectAll('.legend').remove();
 
+                //Prepare Legend
+                legend.selectAll('.legend')
+                    .data(clr.range())
+                    .enter()
+                    .append('rect')
+                    .attr('class','legend')
+                    .attr('width',11)
+                    .attr('height',11)
+                    .attr('x',function(d,i){ return legendX + i*13; })
+                    .attr('y',legendY)
+                    //.attr('title',function(d,i) {console.log(d,i);return "";})
+                    .attr('fill',function(d){ return d; });
 
-            });
+                legend.append('text')
+                    .attr('class','legend')
+                    .attr("fill", "#fff")
+                    .attr('x', legendX - 35)
+                    .attr('y',legendY + 10)
+                    .text('Low');
 
-            //var formatPercent = d3.format(".1%");
+                legend.append('text')
+                    .attr('class','legend')
+                    .attr("fill", "#fff")
+                    .attr('x', legendX + clr.range().length*13+5)
+                    .attr('y',legendY + 10)
+                    .text('High Quality');
+            }
+
+            function pathMonth(t0) {
+                let t1 = new Date(t0.getFullYear(), t0.getMonth() + 1, 0),
+                    d0 = +getDay(t0), w0 = +getWeek(t0),
+                    d1 = +getDay(t1), w1 = +getWeek(t1);
+                return "M" + (w0 + 1) * cellSize + "," + d0 * cellSize
+                    + "H" + w0 * cellSize + "V" + 7 * cellSize
+                    + "H" + w1 * cellSize + "V" + (d1 + 1) * cellSize
+                    + "H" + (w1 + 1) * cellSize + "V" + 0
+                    + "H" + (w0 + 1) * cellSize + "Z";
+            }
+
         });
 
     </script>
