@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "6c8ad2f87494809ad6b8795521a5aafe",
+    "content-hash": "39155ada522c0c112cb18522528ad8b7",
     "packages": [
         {
             "name": "bshaffer/oauth2-server-php",
@@ -352,6 +352,60 @@
             "description": "Promoting the interoperability of container objects (DIC, SL, etc.)",
             "homepage": "https://github.com/container-interop/container-interop",
             "time": "2017-02-14T19:40:03+00:00"
+        },
+        {
+            "name": "crell/api-problem",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Crell/ApiProblem.git",
+                "reference": "3ced9684ae764669255b4c10ca3614a0a1c3d7cc"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Crell/ApiProblem/zipball/3ced9684ae764669255b4c10ca3614a0a1c3d7cc",
+                "reference": "3ced9684ae764669255b4c10ca3614a0a1c3d7cc",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^5.5 || ^7.0"
+            },
+            "require-dev": {
+                "codeclimate/php-test-reporter": "dev-master",
+                "phpunit/phpunit": "4.*"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "2.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Crell\\ApiProblem\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Larry Garfield",
+                    "email": "larry@garfieldtech.com",
+                    "homepage": "http://www.garfieldtech.com/"
+                }
+            ],
+            "description": "PHP wrapper for the api-problem IETF specification",
+            "homepage": "https://github.com/Crell/ApiProblem",
+            "keywords": [
+                "api-problem",
+                "http",
+                "json",
+                "rest",
+                "xml"
+            ],
+            "time": "2017-11-06T17:40:56+00:00"
         },
         {
             "name": "doctrine/annotations",
@@ -2420,7 +2474,8 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "zircote/swagger-php": 20
+        "zircote/swagger-php": 20,
+        "crell/api-problem": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,
