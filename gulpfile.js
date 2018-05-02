@@ -1,7 +1,7 @@
-var gulp = require('gulp');
+let gulp = require('gulp');
 const debug  = require('gulp-debug');
 const concat = require('gulp-concat');
-const uglify = require('gulp-uglify');
+const uglify = require('gulp-uglify-es').default;
 const rename = require('gulp-rename');
 const sass   = require('gulp-sass');
 const nano   = require('gulp-cssnano');
@@ -11,7 +11,8 @@ const merge = require('merge-stream');
 const run = require('child_process').exec;
 
 // application paths
-var config = {
+let config = {
+    nodeDir:  './node_modules',
     bowerDir: './bower_components',
     resDir: './res/assets',
     destDir: './public'
@@ -35,15 +36,25 @@ var options = {
 // list of core JS files to combine
 var jsList = [
     config.bowerDir + '/jquery/dist/jquery.js',
+    config.bowerDir + '/popper.js/dist/umd/popper.js',
     config.bowerDir + '/bootstrap/dist/js/bootstrap.js',
+    //config.bowerDir + '/bootstrap-select/dist/js/bootstrap-select.js',
     config.bowerDir + '/font-awesome/svg-with-js/js/fontawesome-all.js',
-    config.bowerDir + '/jquery.key.js/jquery.key.js'
+    config.bowerDir + '/jquery.key.js/jquery.key.js',
+    config.bowerDir + '/json-forms/dist/js/brutusin-json-forms.js',
+    //config.bowerDir + '/json-forms/dist/js/brutusin-json-forms-bootstrap.js'
+    config.resDir   + '/js/brutusin-json-forms-bootstrap.js',
+    config.nodeDir + '/progressbar.js/dist/progressbar.js',
+    config.nodeDir + '/screenfull/dist/screenfull.js'
 ];
 
 // list of CSS files to combine
 var cssList = [
     //config.bowerDir + '/bootstrap/dist/css/bootstrap.css',
-    config.resDir   + '/styles/app.scss'
+    config.resDir   + '/styles/app.scss',
+    config.bowerDir + '/json-forms/dist/css/brutusin-json-forms.css',
+    //config.bowerDir + '/bootstrap-select/dist/css/bootstrap-select.css'
+
 ];
 
 // list of D3-v3 plugins to combine
@@ -58,9 +69,10 @@ var jsD3v3List = [
 
 // list of D3-v4 plugins to combine
 var jsD3v4List = [
-    config.bowerDir + '/d3/d3.js',
-    config.bowerDir + '/DependencyWheel/js/d3.dependencyWheel.js',
-    config.resDir   + '/js/d3/**.js'
+    config.nodeDir + '/d3v4/build/d3.js',
+    config.nodeDir + '/d3-dependencyWheel/dist/d3-dependencyWheel.js',
+    config.nodeDir + '/d3-calendar/dist/d3-calendar.js',
+    //config.resDir   + '/js/d3/**.js'
 
 ];
 
