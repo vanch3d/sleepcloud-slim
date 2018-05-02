@@ -42,5 +42,10 @@
     "uglify-js-es6": "^2.8.9"
   },
   "dependencies": {
+    "d3-calendar": "github:vanch3d/d3-calendar",
+    "d3-dependencyWheel": "github:vanch3d/DependencyWheel",
+    "d3v4": "^4.2.2",
+    "progressbar.js": "^1.0.1",
+    "screenfull": "^3.3.2"
   }
 }
