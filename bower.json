@@ -18,7 +18,11 @@
     "cubism": "CleverCloud/cubism#^1.6.1",
     "d3-interpolate": "https://github.com/d3/d3-interpolate/releases/download/v1.1.6/d3-interpolate.zip",
     "swagger-ui": "swagger-api/swagger-ui#^3.13.2",
-    "DependencyWheel": "fzaninotto/DependencyWheel#master",
-    "d3-queue": "^3.0.7"
+    "d3-dependencyWheel": "vanch3d/DependencyWheel",
+    "d3-calendar": "vanch3d/d3-calendar",
+    "d3-queue": "^3.0.7",
+    "json-forms": "brutusin/json-forms#^1.6.3",
+    "popper.js": "FezVrasta/popper.js#^1.14.3",
+    "bootstrap-select": "^1.13.0-beta"
   }
 }
