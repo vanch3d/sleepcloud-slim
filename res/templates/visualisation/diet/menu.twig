@@ -1,0 +1,213 @@
+{% extends 'base.twig' %}
+
+{% block title %}Diet | Staple{% endblock %}
+
+{% block controller %}
+    <div id="controller" class="d-flex p-2 d-flex justify-content-between" style="width: 100%;">
+        <div class="btn-group">
+        </div>
+        <div class="btn-group">
+            <button type="button" id="control-fs" class="btn btn-secondary" data-toggle="button" aria-pressed="false" autocomplete="off">
+                <i class="fa fa-expand-arrows-alt "></i>
+            </button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div id="chart" style="width: 100%;min-height: 600px;">
+    </div>
+
+{% endblock %}
+
+{% block injectCSS %}
+    <style>
+        caption {
+            padding-top: .75rem;
+            padding-bottom: 0;
+            color: rgba(255,255,255,.5);
+            caption-side: top;
+            font-weight: bold;
+        }
+    </style>
+{% endblock %}
+
+{% block injectJS %}
+    <script src="/js/d3.v4-bundle.min.js"></script>
+    <script>
+        bar = new ProgressBar.Line("#progress-bar", {
+            strokeWidth: 2,
+            easing: 'easeInOut',
+            duration: 1000,
+            color: '#FFEA82',
+            trailColor: '#eee',
+            trailWidth: 1,
+            svgStyle: {width: '100%', height: '100%'}
+        });
+
+        $(document).ready(function () {
+            // credits: http://www.redotheweb.com/DependencyWheel/
+
+            $("#control-fs").click(function(){
+                if (!screenfull.enabled) return;
+                screenfull.request($('#chart')[0]);
+                  });
+
+            bar.animate(.75);  // Number from 0.0 to 1.0
+            d3.queue()
+                .defer(d3.json, "{{ path_for('api.diet.records') }}")
+                .defer(d3.json, "{{ path_for('api.diet.nutrient') }}")
+                .await(function (error, json, nutrients) {
+                    //console.log("loading data ...");
+                    if (error) throw error;
+                    //console.log(json,nutrients);
+                    createChart(json.data, nutrients)
+                });
+
+            /**
+             *
+             * @param json
+             * @param info
+             */
+            function createChart(food, info)
+            {
+                // @todo[vanch3d] Unnecessary - use d3 formatting
+                let dayLabels =  ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+                let menuTypes = ["#breakfast", "#lunch", "#snacks", "#dinner"];
+
+                // index the food types
+                let nutrients = info.data.reduce((arr, item) => {
+                    arr[item.id] = item;
+                    return arr;
+                }, {});
+
+                // extract all items in a sorted set
+                let allItems = food.map((task) => task.items);
+                allItems = [].concat(...allItems);
+                allItems = d3.set(allItems).values();
+                allItems.sort(function (x, y) {
+                    if (nutrients[x]===undefined || nutrients[x].group === null) return -1;
+                    if (nutrients[y]===undefined || nutrients[y].group === null) return 1;
+                    return d3.ascending(nutrients[x].group, nutrients[y].group);
+                });
+
+                // nest the data accordingly
+                let ft = d3.timeFormat("%W");
+                let menu = d3.nest()
+                    .key(function (d) {
+                        // keys on first monday of each week
+                        return d3.utcMonday(new Date(d.date));
+
+                    })
+                    .sortKeys(function(a,b,){
+                        // sort on week number
+                        return d3.descending(ft(new Date(a)),ft(new Date(b)));
+                    })
+                    .key(function (d) {
+                        // second key on week day (Monday-based)
+                        let v = new Date(d.date);
+                        return (v.getDay() + 6) % 7
+                    })
+                    .sortKeys(function (a,b,){
+                        return d3.ascending(+a,+b);
+                    })
+                    .key(function (d) {
+                        //third key on menu type
+                        return menuTypes.indexOf(d.type);
+                    })
+                    .sortKeys(d3.ascending)
+                    .entries(food);
+
+                //console.log(menu);
+                bar.animate(.85);  // Number from 0.0 to 1.0
+
+                // @todo[vanch3d] Use d3 directly rather than iterating data
+                menu.forEach(function (week,i){
+                    bar.animate(.85+i);  // Number from 0.0 to 1.0
+                    tabulate(week, ["day", "#breakfast", "#lunch", "#snacks", "#dinner"]);
+                });
+
+                bar.animate(1,{duration:2000},function(){
+                    bar.path.setAttribute('stroke', '#a1ff99');
+                    setTimeout(function(){bar.animate(0,{duration:200});},2000);
+                });  // Number from 0.0 to 1.0
+
+
+
+                function tabulate(data, columns) {
+                    //console.log(data);
+
+                    var table = d3.select('#chart').append('table')
+                        .attr("class","table table-sm table-dark");
+                    var tCaption = table.append('caption');
+                    var tHead = table.append('thead');
+                    var tBody = table.append('tbody');
+
+                    tCaption.text(function(){
+                        let mon = data.key;
+                        let sun = d3.timeDay.offset(new Date(mon),6);
+                        let fw = d3.timeFormat("%d %b");
+                        console.log("date=>",mon,sun,fw(new Date(mon)));
+                        return `Week ${fw(new Date(mon))} - ${fw(new Date(sun))}`;
+                    });
+
+                    tHead.append('tr')
+                        .selectAll('th')
+                        .data(columns).enter()
+                        .append('th')
+                        .style("width",function(d,i){
+                            return (i)? "25%" : "50px";
+                        })
+                        .style("min-width",function(d,i){
+                            return (i)? "inherit": "50px";
+                        })
+                        .text(function (column) {
+                            return column;
+                        });
+
+                    // create a row for each object in the data
+                    var rows = tBody.selectAll('tr')
+                        .data(data.values)
+                        .enter()
+                        .append('tr');
+
+                    // create a cell in each row for each column
+                    var cells = rows.selectAll('td')
+                        .data(function (row) {
+                            return columns.map(function (c, a) {
+                                if (a === 0) return [{type: "date",text:dayLabels[row.key]}];
+                                let items = row.values.find(x => x.key === (a - 1).toString());
+                                if (!items) return [{type: "empty", text: ""}];
+
+                                return items.values.reduce((acc, keys) =>
+                                    acc.concat(keys.items.map(
+                                        item => ({type: "menu", text: item})
+                                    )), []);
+                            });
+                        })
+                        .enter()
+                        .append('td');
+
+                    // create a menu in each cell
+                    var menu = cells.selectAll('div')
+                        .data(function (d) { return d; })
+                        .enter()
+                        .append('div')
+                        .attr("class", function (d,idx) {
+                            if (!d.type || d.type==="empty") return null;
+                            if (d.type==="date") return "date";
+                            let cls =  "btn btn-sm food " + (nutrients[d.text] ? nutrients[d.text].group : "");
+                            return cls.toLowerCase();
+                        })
+                        .text(function (d) {
+                            return d.text;
+                        });
+
+                    return table;
+                }
+            }
+
+
+        });
+    </script>
+{% endblock %}
