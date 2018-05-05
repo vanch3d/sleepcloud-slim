@@ -23,11 +23,14 @@
                     <button type="button" class="btn" disabled>Diet</button>
                     <a class="btn btn-secondary {{ current_route =='vis.diet.time' ? 'active'}}" href="{{ path_for('vis.diet.time') }}">
                         <i class="fas fa-th"></i></a>
-                    <a class="btn btn-secondary {{ current_route =='vis.diet.staple' ? 'active'}}" href="{{ path_for('vis.diet.staple') }}">
+                    <a class="btn btn-secondary {{ current_route =='vis.diet.staple-week' ? 'active'}}" href="{{ path_for('vis.diet.staple-week') }}">
                         <i class="fas fa-globe"></i></a>
+                    <a class="btn btn-secondary {{ current_route =='vis.diet.intake-week' ? 'active'}}" href="{{ path_for('vis.diet.intake-week') }}">
+                        <i class="fas fa-chart-pie"></i></a>
                 </div>
                 <div class="btn-group mr-2" role="group" aria-label="Mood">
-                    <button type="button" class="btn btn-secondary">8</button>
+                    <a class="btn btn-secondary {{ current_route =='vis.diet.menu' ? 'active'}}" href="{{ path_for('vis.diet.menu') }}">
+                        <i class="fas fa-utensils"></i></a>
                 </div>
                 <div class="btn-group" role="group" aria-label="Help">
                     <a class="btn nav-link" href="#"><i class="fas fa-info-circle"></i> About</a>
