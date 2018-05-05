@@ -1,0 +1,62 @@
+{% extends 'base.twig' %}
+
+{% block injectGlobalJS %}
+    <script id="js-vanch3d" type="application/javascript">
+        // @todo[vanch3d] Move to dedicated JS file; leave twig-based settings
+        (function (vanch3d, $, undefined ) {
+
+            let _bar = null;
+
+            // @todo[vanch3d] Populated from server: need to check integrity & default
+            let _cfg = null || {{ config|json_encode|raw }};
+
+            // @todo[vanch3d] check arr is array & key is a proper key in it
+            function byKey(arr,key){
+                return arr.reduce((a, i) => {
+                    a[i[key]] = i;
+                    return a;
+                }, {});
+            }
+
+            //////////////////////////////////////////////////////////////////////////
+            // public methods and properties
+
+            vanch3d.config = _cfg.config;
+            vanch3d.version = _cfg.version;
+
+            vanch3d.config.categories.byKeys = function(){
+                return byKey(vanch3d.config.categories,"id");
+            };
+
+            vanch3d.bar = function(){
+                return _bar;
+            };
+
+            /**
+             * @namespace ProgressBar
+             * @namespace screenfull
+             */
+            vanch3d.init = function(){
+                console.log("starting vanch3d app with ...",vanch3d);
+
+                _bar = new ProgressBar.Line("#progress-bar", {
+                    strokeWidth: 2,
+                    easing: 'easeInOut',
+                    duration: 1500,
+                    color: '#FFEA82',
+                    trailColor: '#eee',
+                    trailWidth: 1,
+                    svgStyle: {width: '100%', height: '100%'}
+                });
+
+                $("#control-fs").click(function(){
+                    if (!screenfull.enabled) return;
+                    screenfull.request($('#chart')[0]);
+                });
+
+                return vanch3d;
+            };
+
+        })(window.vanch3d = window.vanch3d || {},jQuery);
+    </script>
+{% endblock %}
