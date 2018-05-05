@@ -43,8 +43,18 @@ class VisController extends Controller
     public function showDietStaple(Request $request, Response $response)
     {
         return $this->getView()->render($response, 'visualisation/diet/staple.twig');
-
+        //return $this->getView()->render($response, 'visualisation/diet/staple-week.twig');
     }
 
+    public function showDietStapleWeekly(Request $request, Response $response)
+    {
+        return $this->getView()->render($response, 'visualisation/diet/staple-week.twig');
+    }
+
+    public function showDietMenu(Request $request, Response $response)
+    {
+        return $this->getView()->render($response, 'visualisation/diet/menu.twig');
+
+    }
 
 }
