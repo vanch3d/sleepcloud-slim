@@ -9,8 +9,10 @@
 namespace NVL\Controllers;
 
 
+use Crell\ApiProblem\ApiProblem;
 use DateTimeZone;
 use FilesystemIterator;
+use GuzzleHttp\Client;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use Kunnu\Dropbox\Dropbox;
@@ -21,6 +23,7 @@ use NVL\Models\SleepCloud\Event;
 use NVL\Support\JSONDateTime;
 use Slim\Http\Request;
 use Slim\Http\Response;
+use stdClass;
 use Tracy\Debugger;
 use ZipArchive;
 
@@ -29,7 +32,7 @@ use Swagger\Annotations as OAS;
 /**
  * Class APIController
  * @package NVL\Controllers
- * @todo[vanch3d] Break the controller up, separating data sources in modules
+ * @todo[vanch3d] Break the controller up, separating data sources in individual Slim containers
  *
  * @OAS\Tag(
  *     name="SleepCloud",
@@ -52,7 +55,10 @@ use Swagger\Annotations as OAS;
  */
 class APIController extends Controller
 {
-    private $cachepath = DIR . '.cache/.sleep/';
+    /**
+     * @var string Path to the cached data
+     */
+    private $cachePath = DIR . '.cache/.sleep/';
 
     /**
      * @param string $dropboxfilename
@@ -77,7 +83,7 @@ class APIController extends Controller
             Debugger::barDump($fileMetadata);
 
             $hash = $fileMetadata->getData()['content_hash'];
-            $filename = $this->cachepath . $hash . $ext;
+            $filename = $this->cachePath . $hash . $ext;
             $this->getLogger()->notice("check data hash value", array(
                 'hash' => $hash));
 
@@ -86,7 +92,7 @@ class APIController extends Controller
                 $this->getLogger()->notice("file does not exist. clean");
 
                 // clear cache folder
-                $di = new RecursiveDirectoryIterator($this->cachepath, FilesystemIterator::SKIP_DOTS);
+                $di = new RecursiveDirectoryIterator($this->cachePath, FilesystemIterator::SKIP_DOTS);
                 $ri = new RecursiveIteratorIterator($di, RecursiveIteratorIterator::CHILD_FIRST);
                 foreach ($ri as $file) {
                     // $file->isDir() ?  rmdir($file) : unlink($file);
@@ -306,7 +312,7 @@ class APIController extends Controller
 
             // reformat date
             $date = $records['date'];
-            $date = new JSONDateTime($date,new DateTimeZone("Europe/London"));
+            $date = new JSONDateTime($date, new DateTimeZone("Europe/London"));
             $records['date'] = $date;
 
             unset($records['moodTags']);
@@ -424,6 +430,39 @@ class APIController extends Controller
         ], 200);
     }
 
+    private function parseDietData()
+    {
+        $keywords = array("#breakfast", "#lunch", "#dinner", "#snacks", "#sandwich");
+
+        $json = $this->parseMoodData();
+        $data = [];
+
+        foreach ($json['data'] as $record) {
+            $comment = $record['moodDescription']['comment'] ?? "";
+            $arr = explode("\n", $comment);
+
+            foreach ($arr as $item) {
+                $match = array_intersect(explode(' ', $item), $keywords);
+                if (count($match) > 0) {
+                    $newRec = array(
+                        'type' => $match[0],
+                        'date' => $record['date'],
+                        'items' => array()
+                    );
+                    $regex = '~(#\w+)~';
+                    if (preg_match_all($regex, $item, $matches, PREG_PATTERN_ORDER)) {
+                        foreach ($matches[1] as $word) {
+                            if ($word !== $match[0])
+                                $newRec['items'][] = ltrim($word, "#");
+                        }
+                    }
+                    $data[] = $newRec;
+                }
+            }
+        }
+        return $data;
+    }
+
     /**
      * @OAS\Get(
      *     path="/records/diet",
@@ -464,39 +503,171 @@ class APIController extends Controller
      */
     public function getDietData(Request $request, Response $response)
     {
-        $keywords = array("#breakfast","#lunch","#dinner","#snacks");
-
-        $json = $this->parseMoodData();
-        $data = [];
-
-        foreach ($json['data'] as $record) {
-            $comment = $record['moodDescription']['comment'] ?? "";
-            $arr = explode("\n",$comment);
-
-            foreach ($arr as $item)
-            {
-                $match = array_intersect( explode(' ', $item), $keywords);
-                if (count($match) > 0)
-                {
-                    $newrec = array(
-                        'type' => $match[0],
-                        'date' => $record['date'],
-                        'items' => array()
-                    );
-                    $regex = '~(#\w+)~';
-                    if (preg_match_all($regex, $item,$matches, PREG_PATTERN_ORDER)) {
-                        foreach ($matches[1] as $word) {
-                            if ($word !== $match[0])
-                                $newrec['items'][] = ltrim($word,"#");
-                        }
-                    }
-                    Debugger::barDump($newrec);
-                    $data[] = $newrec;
-                }
-            }
-        }
+        $json = $this->parseDietData();
         return $response->withJson(array(
-            'data' => $data,
+            'data' => $json,
         ), 200);
+    }
+
+    /**
+     * @param Request  $request
+     * @param Response $response
+     * @return mixed
+     */
+    public function getNutrientData(Request $request, Response $response)
+    {
+        $errors = new stdClass();
+        $errors->items = array();
+        $errors->nutrients = array();
+        $errors->category = array();
+
+        $json = $this->parseDietData();
+
+        foreach ($json as $diet)
+            $data = array_merge($data ?? [], $diet['items']);
+        $data = array_merge([], array_unique($data));
+
+        // food taxonomy
+        $fileCategories = DIR . "public/assets/food_category.json";
+        $tempCat = json_decode(@file_get_contents($fileCategories), true) ?? [];
+
+        $categories = [];
+        $nutrients = [];
+        foreach ($tempCat as $cat)
+            $categories[$cat['id']] = $cat;
+
+        $client = new Client();
+
+        foreach ($data as $foodItem) {
+            if (isset($categories[$foodItem]) &&
+                isset($categories[$foodItem]['group']) &&
+                $categories[$foodItem]['group'] !== null) continue;
+
+            $errors->category[] = $foodItem;
+            $categories[$foodItem] = array(
+                "id" => $foodItem,
+                "group" => null
+            );
+
+        }
+        if (!empty($errors->category))
+            file_put_contents($fileCategories, json_encode($categories,JSON_PRETTY_PRINT));
+
+        if (getenv("APP_FOOD_NUTRIENTS") === "true") {
+
+            // food nutrients
+            $fileNutrients = $this->cachePath . "nutrients,json";
+            $nutrients = json_decode(@file_get_contents($fileNutrients), true) ?? [];
+
+
+            foreach (array_slice($data, 0, 18) as $foodItem) {
+                if (isset($nutrients[$foodItem])) continue;
+                $searchItem = $foodItem;
+                $searchItem = str_replace("flapjack", "English Flapjack", $searchItem);
+                $searchItem = str_replace("icecream", "ice cream", $searchItem);
+                $searchItem = str_replace("_", " ", $searchItem);
+
+                $subids = [
+                    'app_id' => getenv("EDAMAM_APP_ID"),
+                    'app_key' => getenv("EDAMAM_APP_KEY"),
+                    'ingr' => "100g " . $searchItem
+                ];
+                $url = getenv("EDAMAM_URL_FOODPARSER");
+                $final = $url . "?" . http_build_query($subids);
+                $ret = $client->get($final);
+
+                $jsonBody = json_decode((string)$ret->getBody(), true);
+                $newItem = array(
+                    'id' => $foodItem,
+                    'name' => $searchItem,
+                    'food' => $jsonBody['parsed'][0]['food'] ?? [],
+                    'measure' => $jsonBody['parsed'][0]['measure'] ?? [],
+                    'quantity' => $jsonBody['parsed'][0]['quantity'] ?? [],
+                    'nutrients' => []
+                );
+
+                if (!isset($jsonBody['parsed'][0])) {
+                    $errors->items[] = $foodItem;
+                }
+
+                $nutrients[$foodItem] = $newItem;
+            }
+            file_put_contents($fileNutrients, json_encode($nutrients));
+
+            foreach ($nutrients as $key => &$foodItem) {
+                if (isset($foodItem['nutrients']) && !empty($foodItem['nutrients'])) continue;
+                if (empty($foodItem['measure']) || empty($foodItem['food'])) {
+                    $errors->nutrients[] = $foodItem['id'];
+                    continue;
+                }
+
+                $toProcess = array(
+                    'quantity' => $foodItem['quantity'],
+                    'measureURI' => $foodItem['measure']['uri'],
+                    'foodURI' => $foodItem['food']['uri'],
+                );
+
+                $subids = [
+                    'app_id' => getenv("EDAMAM_APP_ID"),
+                    'app_key' => getenv("EDAMAM_APP_KEY")
+                ];
+                $url = getenv("EDAMAM_URL_NUTRITION");
+                $final = $url . "?" . http_build_query($subids);
+                $r = $client->request('POST', $final, ['json' => [
+                    'yield' => 1,
+                    'ingredients' => [$toProcess]
+                ]]);
+
+                $s = (string)$r->getBody();
+                $jsonBody = json_decode(utf8_decode($s), true);
+                $foodItem['nutrients'] = $jsonBody;
+            }
+            file_put_contents($fileNutrients, json_encode($nutrients));
+        }
+
+        //$tt = array_replace_recursive($nutrients, $categories);
+        $gg = array_values(array_unique(array_column($categories, "group")));
+        return $response->withJson(array(
+            'data' => array_values($categories),
+            'metadata' => array(
+                'items' => $data,
+                'categories' => $gg
+            ),
+            'error' => $errors
+        ), 200);
+    }
+
+
+    public function getOntologyFood(Request $request, Response $response)
+    {
+        // food taxonomy
+        $fileCategories = DIR . "public/assets/food_category.json";
+
+        if ($request->isGet())
+        {
+            $categories = json_decode(file_get_contents($fileCategories), true) ?? [];
+            return $response->withJson([
+                'data'=>array_values($categories)
+            ], 200);
+
+        }
+        else if ($request->isPut())
+        {
+            $parsedBody = $request->getParsedBody();
+            $json = json_encode($parsedBody,JSON_PRETTY_PRINT);
+            if (($c = json_last_error()) !== JSON_ERROR_NONE)
+            {
+                $problem = new ApiProblem("Configuration cannot be saved");
+                $problem->setDetail(json_last_error_msg())
+                    ->setInstance("about:json_encode");
+                $problem['code'] = $c;
+                return $response->withJson($problem->asArray(),415)
+                    ->withHeader('Content-Type', ApiProblem::CONTENT_TYPE_JSON . ';charset=utf-8');
+            }
+            $res = file_put_contents($fileCategories, $json);
+            return $response->withJson(null,200);
+        }
+
+
     }
 }
