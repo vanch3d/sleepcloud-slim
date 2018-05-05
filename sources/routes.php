@@ -32,25 +32,56 @@ $app->group('',function() {
         return $this->view->render($response, 'pages/swagger.ui.twig');
     })->setName('swagger.ui');
 
+    $this->group('/diet',function() {
+
+        $this->get('/time', VisController::class . ':showDietTime')->setName('vis.diet.time');
+        $this->get('/staple/overall', VisController::class . ':showDietStaple')->setName('vis.diet.staple');
+        $this->get('/staple', VisController::class . ':showDietStapleWeekly')->setName('vis.diet.staple-week');
+        $this->get('/menu', VisController::class . ':showDietMenu')->setName('vis.diet.menu');
+        $this->get('/intake', function ($request, $response, $args) {
+            return $this->view->render($response, 'visualisation/diet/target-week.twig');
+        })->setName('vis.diet.intake-week');
+
+    })->add(function (Request $request, Response $response, callable $next) {
+        // add application preference to globals
+        $cfg = \NVL\App::getAppPreferences();
+        $this->view->getEnvironment()->addGlobal("config", $cfg);
+        return $next($request, $response);
+    });
+
     $this->get('/calendar', VisController::class . ':showCalendar')->setName('vis.calendar');
     $this->get('/nights/{id}', VisController::class . ':showNight')->setName('vis.night');
     $this->get('/horizon', VisController::class . ':showHorizon')->setName('vis.horizon');
 
-    $this->get('/diet/time', VisController::class . ':showDietTime')->setName('vis.diet.time');
-    $this->get('/diet/staple', VisController::class . ':showDietStaple')->setName('vis.diet.staple');
+});
+
+$app->group('/admin',function() {
+
+    $this->get('', function ($request, $response, $args) {
+        return $this->view->render($response, 'base.twig');
+    })->setName('admin.home');
+
+    $this->get('/diet', function ($request, $response, $args) {
+        return $this->view->render($response, 'admin/food.categories.twig');
+    })->setName('admin.diet');
 
 });
+
 
 $app->group('/api',function() {
 
     // swaggerUI
     $this->get('', APIController::class . ':getOpenAPI')->setName('api.swagger');
 
+    // definitions
+    $this->map(["GET","PUT"],'/definition/food', APIController::class . ':getOntologyFood')->setName('api.ontology.food');
+
     // raw data
     $this->get('/records/sleep', APIController::class . ':getSleepData')->setName('api.sleep.records');
     $this->get('/records/mood', APIController::class . ':getMoodData')->setName('api.mood.records');
     $this->get('/records/mood/tags', APIController::class . ':getMoodTags')->setName('api.mood.tags');
     $this->get('/records/diet', APIController::class . ':getDietData')->setName('api.diet.records');
+    $this->get('/records/diet/nutrients', APIController::class . ':getNutrientData')->setName('api.diet.nutrient');
 
 });
 
@@ -64,9 +95,6 @@ $app->add(function (Request $request, Response $response, callable $next) {
     $route = $request->getAttribute('route');
     if (!empty($route)) {
         $name = $route->getName();
-        //$groups = $route->getGroups();
-        //$methods = $route->getMethods();
-        //$arguments = $route->getArguments();
         $this->view->getEnvironment()->addGlobal("current_route", $name);
     }
     return $next($request, $response);
