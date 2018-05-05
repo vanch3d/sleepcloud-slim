@@ -72,8 +72,9 @@ var jsD3v4List = [
     config.nodeDir + '/d3v4/build/d3.js',
     config.nodeDir + '/d3-dependencyWheel/dist/d3-dependencyWheel.js',
     config.nodeDir + '/d3-calendar/dist/d3-calendar.js',
-    //config.resDir   + '/js/d3/**.js'
-
+    config.nodeDir + '/d3-tip/dist/index.js',
+    config.nodeDir + '/d3-asterPlot/dist/d3-asterPlot.js',
+    config.resDir  + '/js/d3/**.js'
 ];
 
 // list of font & font-icons to copy
