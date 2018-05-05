@@ -1,0 +1,207 @@
+{% extends 'base.vis.twig' %}
+
+{% block title %}Diet | Targets / Weekly{% endblock %}
+
+{% block controller %}
+    <div id="controller" class="d-flex p-2 justify-content-between" style="width: 100%;">
+        <div class="btn-group">
+        </div>
+        <div class="btn-group">
+            <button type="button" id="control-fs" class="btn btn-secondary" data-toggle="button" aria-pressed="false" autocomplete="off">
+                <i class="fa fa-expand-arrows-alt "></i>
+            </button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div id="chart" style="width: 100%;min-height: 600px">
+    </div>
+
+{% endblock %}
+
+{% block injectCSS %}
+    <style>
+        path.target
+        {
+            filter: drop-shadow( -4px -4px 5px #000 );
+        }
+
+        .d3-tip {
+            line-height: 1;
+            font-weight: bold;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            border-radius: 2px;
+        }
+
+        /* Creates a small triangle extender for the tooltip */
+        .d3-tip:after {
+            box-sizing: border-box;
+            display: inline;
+            font-size: 10px;
+            width: 100%;
+            line-height: 1;
+            color: rgba(0, 0, 0, 0.8);
+            content: "\25BC";
+            position: absolute;
+            text-align: center;
+        }
+
+        /* Style northward tooltips differently */
+        .d3-tip.n:after {
+            margin: -1px 0 0 0;
+            top: 100%;
+            left: 0;
+        }
+
+    </style>
+{% endblock %}
+
+{% block injectJS %}
+    <script src="/js/d3.v4-bundle.js"></script>
+    <script>
+        $(document).ready(function () {
+            // credits: http://www.redotheweb.com/DependencyWheel/
+            /** @namespace vanch3d */
+            vanch3d.init();
+            vanch3d.bar().animate(.75);
+
+            d3.queue()
+                .defer(d3.json, "{{ path_for('api.diet.records') }}")
+                .defer(d3.json, "{{ path_for('api.diet.nutrient') }}")
+                .await(function (error, json, nutrients) {
+                    console.log("loading data ...");
+                    if (error) {
+                        throw error;
+                    }
+                    //console.log(json,nutrients);
+                    createCharts(json, nutrients)
+                });
+
+            /**
+             *
+             * @param json
+             * @param info
+             */
+            function createCharts(json, info)
+            {
+                const nutrients = info.data.reduce((arr, item) => {
+                    arr[item.id] = item;
+                    return arr;
+                }, {});
+
+                let sortFoodCat = vanch3d.config.categories.byKeys();
+
+                console.log("data",json.data);
+                console.log("nutrients",nutrients);
+
+                let ft = d3.timeFormat("%W");
+                let menu = d3.nest()
+                    .key(function (d) {
+                        // group by week
+                        return ft(new Date(d.date));
+                    })
+                    .sortKeys(d3.descending)
+                    .rollup(function(d){
+                        // extract all food items and get their category and day
+                        let items = d.reduce((acc, elt) =>
+                            acc.concat(elt.items.map(item => (
+                                {
+                                    i: item,                                    cat: nutrients[item].group,
+                                    day: ((new Date(elt.date)).getDay() + 6) % 7
+                                })
+                            )), []);
+
+                        // group per category
+                        let perCategory = d3.nest()
+                            .key(function(d) { return d.cat;})
+                            .sortKeys(function(x, y){
+                                let bx = sortFoodCat[x].rank || 0;
+                                let by = sortFoodCat[y].rank || 0;
+                                return d3.ascending(bx, by);
+                            })
+                            .rollup(function(d){
+
+                                console.log(d);
+                                let perDay = d3.nest()
+                                    .key(function(d){ return d.day;})
+                                    .rollup(function (d){ return d.length})
+                                    .entries(d);
+                                //console.log("perDay",perDay);
+
+                                let mean = d3.mean(perDay, function(d) { return d.value; });
+                                return {
+                                    count: d.length,
+                                    width: d.length,
+                                    avg: mean,
+                                    score: Math.min(mean * 100 / (vanch3d.config.target || 5) ,100)
+                                };
+                            })
+                            .entries(items);
+
+                        // un-nest data
+                        return perCategory.map((x)=> ( Object.assign(x.value,{key:x.key})));
+                        //return perCategory;
+                    })
+                    .entries(json.data);
+
+                console.log("menu",menu);
+
+                let score = function(data)
+                {
+                    let x = data.reduce(function (a, b) { return a + (b.score * b.width); }, 0);
+                    let y = data.reduce(function (a, b) { return a + b.width; }, 0);
+                    return  `${Math.round(x/y)}`;
+                };
+
+                let chart = d3.asterPlot()
+                    .width(400)
+                    .height(400)
+                    .pieClass(function(d) {
+                        let cls =  "food " + (d.data.key);
+                        return cls.toLowerCase();
+                    })
+                    .pieFill(function(){ return null;})
+                    .pieToolTip(function(d){
+                        console.log(d);
+                        return sortFoodCat[d.data.key].name + ": <span style='color:orangered'>" + d.data.avg.toFixed(2) + "</span>";
+                    })
+                    .showTarget(true,2.0/vanch3d.config.target)
+                    .score(score);
+
+                let row = $("<div/>", {
+                    "class": "row"
+                });
+                row.appendTo($('#chart'));
+
+                menu.forEach(function (week, index) {
+
+
+
+                    console.log("week",index,week.value);
+                    let col = $("<div/>", {
+                        "class": "col-6 text-center",
+                        "id": "chart-" + (index + 1)
+                    });
+                    col.appendTo(row);
+
+                    let svgChart = d3.select("#chart-" + (index + 1))
+                        .datum(week.value.filter(function(d){
+                            return true;
+                            return d.key !== "null";
+                        }))
+                        .call(chart);
+
+                });
+
+
+                vanch3d.bar().animate(1,{duration:200},function(){
+                    vanch3d.bar().path.setAttribute('stroke', '#a1ff99');
+                });  // Number from 0.0 to 1.0
+
+            }
+        });
+    </script>
+{% endblock %}
