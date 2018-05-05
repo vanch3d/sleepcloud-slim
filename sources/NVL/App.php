@@ -40,4 +40,19 @@ use Swagger\Annotations as OAS;
 class App extends \Slim\App
 {
 
+    static function getAppPreferences()
+    {
+        $prefFile =  DIR . 'res/config/ontology.json';
+        $packFile =  DIR . 'package.json';
+
+        $preference = json_decode(@file_get_contents($prefFile),true);
+        $packages = json_decode(@file_get_contents($packFile),true);
+
+        //$preference['version'] = $packages['version'];
+        return [
+            "config" => $preference,
+            "version" => $packages['version']
+        ];
+
+    }
 }
