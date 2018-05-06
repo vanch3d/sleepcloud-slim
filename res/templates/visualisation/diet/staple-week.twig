@@ -1,0 +1,201 @@
+{% extends 'base.vis.twig' %}
+
+{% block title %}Diet | Staples / Weekly{% endblock %}
+
+{% block controller %}
+    <div class="d-flex p-2 justify-content-between" style="width: 100%;">
+        <h2 class="title">Weekly Menu Composition</h2>
+        <p class="headline">Show composition of menu with included food staples</p>
+    </div>
+    <div id="controller" class="d-flex p-2 justify-content-between" style="width: 100%;">
+        <div class="btn-group">
+            <a class="btn btn-secondary" href="{{ path_for('vis.diet.staple') }}">All</a>
+            <a class="btn btn-secondary active" href="{{ path_for('vis.diet.staple-week') }}">By Weeks</a>
+        </div>
+        <div class="btn-group">
+            <button type="button" id="control-fs" class="btn btn-secondary" data-toggle="button" aria-pressed="false" autocomplete="off">
+                <i class="fa fa-expand-arrows-alt "></i>
+            </button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div id="chart" style="width: 100%;min-height: 600px">
+    </div>
+
+{% endblock %}
+
+{% block injectCSS %}
+    <style>
+        g.group text {
+            fill: white;
+        }
+    </style>
+{% endblock %}
+
+{% block injectJS %}
+    <script src="/js/d3.v4-bundle.js"></script>
+    <script>
+        $(document).ready(function () {
+            // credits: http://www.redotheweb.com/DependencyWheel/
+
+            /** @namespace vanch3d */
+            vanch3d.bar().animate(.75);
+            d3.queue()
+                .defer(d3.json, "{{ path_for('api.diet.records') }}")
+                .defer(d3.json, "{{ path_for('api.diet.nutrient') }}")
+                .await(function (error, json, nutrients) {
+                    console.log("loading data ...");
+                    if (error) throw error;
+                    //console.log(json,nutrients);
+                    createCharts(json, nutrients)
+                });
+
+            /**
+             *
+             * @param json
+             * @param info
+             */
+            function createCharts(json, info)
+            {
+                const nutrients = info.data.reduce((arr, item) => {
+                    arr[item.id] = item;
+                    return arr;
+                }, {});
+
+                let sortKey={
+                    CARBS: 1 ,
+                    DAIRY: 2,
+                    PROTEIN: 3,
+                    FRUITVEG: 4,
+                    SPREAD: 5,
+                    SUGARY: 6,
+                    DRINK: 7
+                };
+
+                //console.log(nutrients);
+                console.log("data", json.data);
+
+                let ft = d3.timeFormat("%W");
+                let menu = d3.nest()
+                    .key(function (d) {
+                        return ft(new Date(d.date));
+                    })
+                    .sortKeys(d3.descending)
+                    .entries(json.data);
+
+                let chart = d3.dependencyWheel()
+                    .width(400)
+                    .margin(50)
+                    .fill(function(){ return ""; });
+
+                let row = $("<div/>", {
+                    "class": "row"
+                });
+                row.appendTo($('#chart'));
+
+                menu.forEach(function (week, index) {
+                    let col = $("<div/>", {
+                        "class": "col-6 text-center",
+                        "id": "chart-" + (index + 1)
+                    });
+                    col.appendTo(row);
+
+                    // extract all items in a sorted set
+                    let allItems = week.values.map((task) => task.items);
+                    allItems = [].concat(...allItems);
+                    allItems = d3.set(allItems).values();
+                    allItems.sort(function(x, y){
+                        let ax = (!nutrients[x]) ? null : nutrients[x].group;
+                        let ay = (!nutrients[y]) ? null : nutrients[y].group;
+                        let bx = sortKey[ax] || 0;
+                        let by = sortKey[ay] || 0;
+                        return d3.ascending(bx, by);
+                    });
+
+
+                    // build an index table
+                    let indexItems = [];
+                    let attributes = [];
+                    allItems.forEach(function (e, i) {
+                        indexItems[e] = i;
+                        attributes[i] = nutrients[e];
+                    });
+
+                    // create a null  matrix
+                    let n = allItems.length;
+                    let matrix = [];
+                    for (let i = 0; i < n; i++) {
+                        matrix[i] = new Array(n).fill(0);
+                        // may fail on old browser, use the following
+                        //matrix[i] = Array.apply(null, new Array(n)).map(Number.prototype.valueOf,0);
+                    }
+
+                    // fill matrix with co-occurrence of food staples
+                    week.values.forEach(function (food) {
+                        // close list of food items to parse it
+                        let clone = food.items.slice(0);
+                        while (clone.length > 1) {
+                            let item = clone.shift();
+                            clone.forEach(function (staple) {
+                                let i = indexItems[item];
+                                let j = indexItems[staple];
+                                matrix[i][j] += 1;
+                                matrix[j][i] += 1;
+                            });
+                        }
+
+                    });
+
+                    let svgChart = d3.select("#chart-" + (index + 1))
+                        .datum({
+                            packageNames: allItems,
+                            matrix: matrix,
+                            attributes: attributes
+                        })
+                        .call(chart);
+
+                    function getFoodGroup(idx){
+                        let t = attributes[idx];
+                        let r = (t===undefined)? t : t.group;
+                        r = r || "";
+                        return "food " + r.toLowerCase();
+                    }
+
+                    svgChart.selectAll("path.group")
+                        .attr("class",function(d){
+                            return "group " + getFoodGroup(d.index);
+
+                        })
+                        .on("mouseover.overflow", function(d,i){
+                        ///console.log(d,i);
+                        svgChart.selectAll("svg")
+                            .attr("style","overflow:visible;");
+                        })
+                        .on("mouseout.overflow", function(d,i){
+                            svgChart.selectAll("svg")
+                                .attr("style","overflow:auto;");
+                            //console.log(d,i);
+                        });
+
+
+                    svgChart.selectAll("path.chord")
+                        .attr("class",function(d){
+                            return "chord " + getFoodGroup(d.source.index);
+                        });
+
+                    svgChart.selectAll(".group-name").attr("style","fill:white");
+
+
+
+                });
+
+                vanch3d.bar().animate(1,{duration:200},function(){
+                    vanch3d.bar().path.setAttribute('stroke', '#a1ff99');
+                });
+
+            }
+        });
+    </script>
+{% endblock %}
