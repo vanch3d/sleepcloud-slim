@@ -1,0 +1,13 @@
+{
+  "categories":[
+    { "id": "CARBS",  "rank":1 , "name":"Carbohydrate"},
+    { "id": "DAIRY", "rank":2, "name":"Dairy"},
+    { "id": "PROTEIN", "rank":3, "name":"Protein"},
+    { "id": "FRUITVEG", "rank":4, "name":"Fruit & Veg"},
+    { "id": "SPREAD", "rank":5, "name":"Spread & Oil"},
+    { "id": "SUGARY", "rank":6, "name":"Sugary stuff"},
+    { "id": "DRINK", "rank":7, "name":"Drink (sugar-free)"},
+    { "id": "null", "rank":0, "name":"Meals & others"}
+  ],
+  "target": 5
+}
