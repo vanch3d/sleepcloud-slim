@@ -1,0 +1,56 @@
+/*!
+ * food & nutrient component
+ */
+path.food {
+    fill: $food-type-meal;
+
+  &.carbs {
+    fill: $food-type-carbohydrate;
+  }
+  &.fruitveg {
+    fill: $food-type-fruitveg;
+  }
+  &.protein {
+    fill: $food-type-protein;
+  }
+  &.spread {
+    fill: $food-type-spread;
+  }
+  &.dairy {
+    fill: $food-type-dairy;
+  }
+  &.sugary {
+    fill: $food-type-sugary;
+  }
+  &.drink {
+    fill: $food-type-drink;
+  }
+}
+
+.btn.food{
+    background-color: $food-type-meal;
+
+  &.carbs {
+    background-color: $food-type-carbohydrate;
+  }
+  &.fruitveg {
+    background-color: $food-type-fruitveg;
+  }
+  &.protein {
+    background-color: $food-type-protein;
+  }
+  &.spread {
+    background-color: $food-type-spread;
+  }
+  &.dairy {
+    background-color: $food-type-dairy;
+  }
+  &.sugary {
+    background-color: $food-type-sugary;
+  }
+  &.drink {
+    background-color: $food-type-drink;
+  }
+}
+
+
