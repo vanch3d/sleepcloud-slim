@@ -1,9 +1,13 @@
-{% extends 'base.twig' %}
+{% extends 'base.vis.twig' %}
 
 {% block title %}Diet | Staple{% endblock %}
 
 {% block controller %}
-    <div id="controller" class="d-flex p-2 d-flex justify-content-between" style="width: 100%;">
+    <div class="d-flex p-2 justify-content-between" style="width: 100%;">
+        <h2 class="title">Daily Menu Composition</h2>
+        <p class="headline">Show day-bay-day menu for every breakfast, lunch, dinner and snacks.</p>
+    </div>
+    <div id="controller" class="d-flex p-2 justify-content-between" style="width: 100%;">
         <div class="btn-group">
         </div>
         <div class="btn-group">
@@ -35,25 +39,10 @@
 {% block injectJS %}
     <script src="/js/d3.v4-bundle.min.js"></script>
     <script>
-        bar = new ProgressBar.Line("#progress-bar", {
-            strokeWidth: 2,
-            easing: 'easeInOut',
-            duration: 1000,
-            color: '#FFEA82',
-            trailColor: '#eee',
-            trailWidth: 1,
-            svgStyle: {width: '100%', height: '100%'}
-        });
-
         $(document).ready(function () {
             // credits: http://www.redotheweb.com/DependencyWheel/
 
-            $("#control-fs").click(function(){
-                if (!screenfull.enabled) return;
-                screenfull.request($('#chart')[0]);
-                  });
-
-            bar.animate(.75);  // Number from 0.0 to 1.0
+            vanch3d.bar().animate(.75);  // Number from 0.0 to 1.0
             d3.queue()
                 .defer(d3.json, "{{ path_for('api.diet.records') }}")
                 .defer(d3.json, "{{ path_for('api.diet.nutrient') }}")
@@ -119,17 +108,17 @@
                     .entries(food);
 
                 //console.log(menu);
-                bar.animate(.85);  // Number from 0.0 to 1.0
+                vanch3d.bar().animate(.85);  // Number from 0.0 to 1.0
 
                 // @todo[vanch3d] Use d3 directly rather than iterating data
                 menu.forEach(function (week,i){
-                    bar.animate(.85+i);  // Number from 0.0 to 1.0
+                    vanch3d.bar().animate(.85+i);  // Number from 0.0 to 1.0
                     tabulate(week, ["day", "#breakfast", "#lunch", "#snacks", "#dinner"]);
                 });
 
-                bar.animate(1,{duration:2000},function(){
-                    bar.path.setAttribute('stroke', '#a1ff99');
-                    setTimeout(function(){bar.animate(0,{duration:200});},2000);
+                vanch3d.bar().animate(1,{duration:2000},function(){
+                    vanch3d.bar().path.setAttribute('stroke', '#a1ff99');
+                    setTimeout(function(){vanch3d.bar().animate(0,{duration:200});},2000);
                 });  // Number from 0.0 to 1.0
 
 
