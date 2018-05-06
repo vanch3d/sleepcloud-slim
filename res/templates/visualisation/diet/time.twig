@@ -1,13 +1,25 @@
-{% extends 'base.twig' %}
+{% extends 'base.vis.twig' %}
 
 {% block title %}Diet | Time{% endblock %}
 
-{% block content %}
-    <div id="controller" class="d-flex p-2 flex-row" style="width: 100%;">
-        <div id="data-picker"></div>
+{% block controller %}
+    <div class="d-flex p-2 justify-content-between" style="width: 100%;">
+        <h2 class="title">Weekly Food Timing</h2>
+        <p class="headline">Show hour-by-hour & day-by-day common times for food intake.</p>
     </div>
-    <div id="chart" style="width: 100%;">
+    <div id="controller" class="d-flex p-2 flex-row justify-content-between" style="width: 100%;">
+        <div class="btn-group">
+        </div>
+        <div class="btn-group">
+            <button type="button" id="control-fs" class="btn btn-secondary" data-toggle="button" aria-pressed="false" autocomplete="off">
+                <i class="fa fa-expand-arrows-alt "></i>
+            </button>
+        </div>
+    </div>
+{% endblock %}
 
+{% block content %}
+    <div id="chart" style="width: 100%;">
     </div>
 {% endblock %}
 
@@ -53,7 +65,7 @@
                 .entries(json.data);
             console.log(byDay);
 
-            let chart = d3.chart.weeklyHeatMap();
+            let chart = d3.weeklyHeatMap();
             d3.select('#chart')
                 .datum(byDay)
                 .call(chart);
