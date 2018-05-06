@@ -1,18 +1,29 @@
-{% extends 'base.twig' %}
+{% extends 'base.vis.twig' %}
 
 {% block title %}Diet | Staple{% endblock %}
 
-{% block content %}
-    <div id="controller" class="d-flex p-2 flex-row" style="width: 100%;">
+{% block controller %}
+    <div id="controller" class="d-flex p-2 d-flex justify-content-between" style="width: 100%;">
+        <div class="btn-group">
+            <a class="btn btn-secondary active" href="{{ path_for('vis.diet.staple') }}">All</a>
+            <a class="btn btn-secondary" href="{{ path_for('vis.diet.staple-week') }}">By Weeks</a>
+        </div>
+        <div class="btn-group">
+            <button type="button" id="control-fs" class="btn btn-secondary" data-toggle="button" aria-pressed="false" autocomplete="off">
+                <i class="fa fa-expand-arrows-alt "></i>
+            </button>
+        </div>
     </div>
-    <div id="chart" style="width: 100%;">
-    </div>
+{% endblock %}
 
+{% block content %}
+    <div id="chart" style="width: 60em;height: 60em;">
+    </div>
 {% endblock %}
 
 {% block injectCSS %}
     <style>
-        g.group text {
+        svg text.group-name {
             fill: white;
         }
     </style>
@@ -22,22 +33,59 @@
     <script>
         $(document).ready(function() {
             // credits: http://www.redotheweb.com/DependencyWheel/
+            vanch3d.bar().animate(.75);  // Number from 0.0 to 1.0
+            d3.queue()
+                .defer(d3.json, "{{ path_for('api.diet.records') }}")
+                .defer(d3.json, "{{ path_for('api.diet.nutrient') }}")
+                .await(function (error, json, nutrients) {
+                    //console.log("loading data ...");
+                    if (error) throw error;
+                    vanch3d.bar().animate(.90);  // Number from 0.0 to 1.0
+                    //console.log(json,nutrients);
+                    createChart(json,nutrients)
+                });
 
-            let url = "{{ path_for('api.diet.records') }}";
-            d3.json(url, function(error, json) {
-                console.log(json.data);
+            /**
+             *
+             * @param json
+             * @param info
+             */
+            function createChart(json,info)
+            {
+                const nutrients = info.data.reduce( (arr, item) => {
+                    arr[item.id] = item;
+                    return arr;
+                } , {});
+
+                let sortKey={
+                    CARBS: 1 ,
+                    DAIRY: 2,
+                    PROTEIN: 3,
+                    FRUITVEG: 4,
+                    SPREAD: 5,
+                    SUGARY: 6,
+                    DRINK: 7
+                };
 
                 // extract all items in a sorted set
                 let allItems = json.data.map((task) => task.items );
                 allItems = [].concat(...allItems);
                 allItems = d3.set(allItems).values();
-                allItems.sort(function(x, y){ return d3.ascending(x, y); });
-                //console.log(allItems);
+                //console.log("allItems",allItems);
+                allItems.sort(function(x, y){
+                    let ax = (!nutrients[x]) ? null : nutrients[x].group;
+                    let ay = (!nutrients[y]) ? null : nutrients[y].group;
+                    let bx = sortKey[ax] || 0;
+                    let by = sortKey[ay] || 0;
+                    return d3.ascending(bx, by);
+                });
 
                 // build an index table
                 let indexItems = [];
+                let attributes = [];
                 allItems.forEach(function (e,i) {
                     indexItems[e] = i;
+                    attributes[i] = nutrients[e];
                 });
                 //console.log(indexItems);
 
@@ -51,6 +99,9 @@
                     //matrix[i] = Array.apply(null, new Array(n)).map(Number.prototype.valueOf,0);
                 }
 
+                vanch3d.bar().animate(.92);  // Number from 0.0 to 1.0
+
+
                 // fill matrix with co-occurrence of food staples
                 json.data.forEach(function (food) {
                     // close list of food items to parse it
@@ -58,7 +109,7 @@
                     while (clone.length>1)
                     {
                         let item = clone.shift();
-                        clone.forEach(function (staple) {
+                        clone.forEach(function (staple,x) {
                             let i = indexItems[item];
                             let j = indexItems[staple];
                             matrix[i][j] += 1;
@@ -67,16 +118,47 @@
                     }
 
                 });
-                //console.log(matrix);
 
-                let chart = d3.chart.dependencyWheel();
-                d3.select('#chart')
+                vanch3d.bar().animate(.98);  // Number from 0.0 to 1.0
+
+                let chart = d3.dependencyWheel()
+                    .width(880)
+                    .fill(function(){ return ""; });
+
+                vanch3d.bar().animate(1,{duration:2000},function(){
+                    vanch3d.bar().path.setAttribute('stroke', '#a1ff99');
+                    });  // Number from 0.0 to 1.0
+                d3.select('#chart').select("svg").remove();
+                let svgChart = d3.select('#chart')
                     .datum({
                         packageNames: allItems,
-                        matrix: matrix
+                        matrix: matrix,
+                        attributes: attributes
                     })
                     .call(chart);
-            });
+
+                //console.log("#chart",d3.select('#chart'));
+                //console.log("svgChart",svgChart);
+
+
+                function getFoodGroup(idx){
+                    let t = attributes[idx];
+                    let r = (t===undefined)? t : t.group;
+                    r = r || "";
+                    return "food " + r.toLowerCase();
+                }
+                svgChart.selectAll("path.group")
+                    .attr("class",function(d){
+                        return "group " + getFoodGroup(d.index);
+
+                    });
+                svgChart.selectAll("path.chord")
+                    .attr("class",function(d){
+                        return "chord " + getFoodGroup(d.source.index);
+                    });
+
+            }
+
 
         });
     </script>
