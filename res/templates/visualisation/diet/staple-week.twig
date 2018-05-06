@@ -64,15 +64,7 @@
                     return arr;
                 }, {});
 
-                let sortKey={
-                    CARBS: 1 ,
-                    DAIRY: 2,
-                    PROTEIN: 3,
-                    FRUITVEG: 4,
-                    SPREAD: 5,
-                    SUGARY: 6,
-                    DRINK: 7
-                };
+                let sortFoodCat = vanch3d.config.categories.byKeys();
 
                 //console.log(nutrients);
                 console.log("data", json.data);
@@ -109,8 +101,8 @@
                     allItems.sort(function(x, y){
                         let ax = (!nutrients[x]) ? null : nutrients[x].group;
                         let ay = (!nutrients[y]) ? null : nutrients[y].group;
-                        let bx = sortKey[ax] || 0;
-                        let by = sortKey[ay] || 0;
+                        let bx = sortFoodCat[ax].rank || 0;
+                        let by = sortFoodCat[ay].rank || 0;
                         return d3.ascending(bx, by);
                     });
 

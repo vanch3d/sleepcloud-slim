@@ -33,6 +33,8 @@
     <script>
         $(document).ready(function() {
             // credits: http://www.redotheweb.com/DependencyWheel/
+
+            /** @namespace vanch3d */
             vanch3d.bar().animate(.75);  // Number from 0.0 to 1.0
             d3.queue()
                 .defer(d3.json, "{{ path_for('api.diet.records') }}")
@@ -57,15 +59,7 @@
                     return arr;
                 } , {});
 
-                let sortKey={
-                    CARBS: 1 ,
-                    DAIRY: 2,
-                    PROTEIN: 3,
-                    FRUITVEG: 4,
-                    SPREAD: 5,
-                    SUGARY: 6,
-                    DRINK: 7
-                };
+                let sortFoodCat = vanch3d.config.categories.byKeys();
 
                 // extract all items in a sorted set
                 let allItems = json.data.map((task) => task.items );
@@ -75,8 +69,8 @@
                 allItems.sort(function(x, y){
                     let ax = (!nutrients[x]) ? null : nutrients[x].group;
                     let ay = (!nutrients[y]) ? null : nutrients[y].group;
-                    let bx = sortKey[ax] || 0;
-                    let by = sortKey[ay] || 0;
+                    let bx = sortFoodCat[ax].rank || 0;
+                    let by = sortFoodCat[ay].rank || 0;
                     return d3.ascending(bx, by);
                 });
 
