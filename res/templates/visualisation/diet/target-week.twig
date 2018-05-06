@@ -3,6 +3,10 @@
 {% block title %}Diet | Targets / Weekly{% endblock %}
 
 {% block controller %}
+    <div class="d-flex p-2 justify-content-between" style="width: 100%;">
+        <h2 class="title">Weekly Portions</h2>
+        <p class="headline">Show weekly portions, daily average and targets for each category of food</p>
+    </div>
     <div id="controller" class="d-flex p-2 justify-content-between" style="width: 100%;">
         <div class="btn-group">
         </div>
@@ -65,7 +69,6 @@
         $(document).ready(function () {
             // credits: http://www.redotheweb.com/DependencyWheel/
             /** @namespace vanch3d */
-            vanch3d.init();
             vanch3d.bar().animate(.75);
 
             d3.queue()
