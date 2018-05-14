@@ -6,7 +6,11 @@
  * Time: 23:17
  */
 
-use NVL\Support\Storage\Session;
+use NVL\{
+    Services\DataProvider,
+    Services\DataWrangler,
+    Support\Storage\Session
+};
 use Slim\Flash\Messages;
 use Slim\Views\Twig;
 use Slim\Views\TwigExtension;
@@ -65,4 +69,28 @@ $container['cache'] = function () {
 
 $container['twig_profile'] = function () {
     return new Twig_Profiler_Profile();
+};
+
+
+/**
+ * @param \Slim\Container $c
+ * @return DataProvider\DropboxCached
+ * @throws Exception
+ * @throws \Interop\Container\Exception\ContainerException
+ */
+$container['dropbox'] = function (\Slim\Container  $c) {
+    $settings = $c->get('settings');
+    return new DataProvider\DropboxCached($settings['dropbox'],$c->logger);
+};
+
+
+/**
+ * @param \Slim\Container $c
+ * @return DataWrangler\Mood
+ * @throws \Interop\Container\Exception\ContainerException
+ */
+$container['mood'] = function (\Slim\Container  $c) {
+    $settings = $c->get('settings');
+    $dropbox = $c->get('dropbox');
+    return new DataWrangler\Mood($settings['dropbox'],$c->logger,$dropbox);
 };
