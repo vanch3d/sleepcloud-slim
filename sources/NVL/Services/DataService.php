@@ -9,6 +9,7 @@
 namespace NVL\Services;
 
 use Psr\Log\LoggerInterface;
+use Tracy\Debugger;
 
 abstract class DataService
 {
@@ -17,7 +18,7 @@ abstract class DataService
 
     protected function log($level, $msg, $context)
     {
-        //Debugger::barDump($context,$msg);
+        Debugger::barDump($context,$msg);
         if ($this->logger)
             $this->logger->log($level,$msg,$context);
     }
