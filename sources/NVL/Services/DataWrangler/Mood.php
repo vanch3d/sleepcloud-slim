@@ -9,11 +9,15 @@
 namespace NVL\Services\DataWrangler;
 
 
+use DateTimeZone;
 use NVL\Services\{
     DataProvider\ProviderInterface,
     DataService
 };
+use NVL\Support\JSONDateTime;
 use Psr\Log\LoggerInterface;
+use Tracy\Debugger;
+use ZipArchive;
 
 class Mood extends DataService implements WranglerInterface
 {
@@ -28,5 +32,70 @@ class Mood extends DataService implements WranglerInterface
     protected function validateConfig()
     {
         // TODO: Implement validateConfig() method.
+    }
+
+    public function getData()
+    {
+        $wrapper = $this->provider->getHash($this->config['data']['mood']);
+        Debugger::barDump($wrapper);
+
+        //$cache = $wrapper->cache;
+
+        if (file_exists($wrapper->cache . ".json"))
+        {
+            $this->log("INFO","json already cached",[]);
+
+            $json = json_decode(@file_get_contents($wrapper->cache . ".json"), true);
+            return $json;
+
+        }
+
+        $jsonCache = $wrapper->cache . ".json";
+        $hash = basename($wrapper->cache, ".zip");
+
+        $zip = new ZipArchive;
+        $res = $zip->open($wrapper->cache);
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $metadata['list'][] = $zip->statIndex($i);
+        }
+
+        $metadata = [];
+        $data = [];
+        $tags = [];
+
+        $im_string = $zip->getFromName("/backup.json");
+        $data = json_decode($im_string, true);
+
+        foreach ($data as &$records) {
+            $alltags = [];
+            foreach ($records['moodTags'] as $moodtag) {
+                $name = $moodtag['tagName'];
+                if (!isset($tags[$name])) {
+                    $tags[$name] = $moodtag;
+                }
+                $alltags[] = $name;
+            }
+
+            // reformat date
+            $date = $records['date'];
+            $date = new JSONDateTime($date, new DateTimeZone("Europe/London"));
+            $records['date'] = $date;
+
+            unset($records['moodTags']);
+            $records['moodTags'] = $alltags;
+
+        }
+
+        $metadata['hash'] = $hash;
+        $metadata['tags'] = $tags;
+
+        $json = [
+            'data' => $data,
+            'metadata' => $metadata
+        ];
+
+        file_put_contents($jsonCache, json_encode($json));
+
+        return $json;
     }
 }
