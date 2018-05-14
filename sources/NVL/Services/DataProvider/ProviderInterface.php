@@ -9,11 +9,11 @@
 namespace NVL\Services\DataProvider;
 
 
-interface DataProvider
+interface ProviderInterface
 {
     /**
      * @param string $filename
-     * @return DataWrapper
+     * @return Wrapper
      */
     public function getHash(string $filename);
 

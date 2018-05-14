@@ -9,7 +9,7 @@
 namespace NVL\Services\DataWrangler;
 
 
-interface DataWrangler
+interface WranglerInterface
 {
 
 }
