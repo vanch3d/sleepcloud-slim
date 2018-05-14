@@ -8,7 +8,11 @@
 
 namespace NVL\Services\DataProvider;
 
+use Kunnu\Dropbox\Dropbox;
+use Kunnu\Dropbox\DropboxApp;
+use Kunnu\Dropbox\Exceptions\DropboxClientException;
 use Psr\Log\LoggerInterface;
+use Tracy\Debugger;
 
 class DropboxCached implements ProviderInterface
 {
@@ -17,6 +21,12 @@ class DropboxCached implements ProviderInterface
     private $cache = null;
     private $dropbox = null;
 
+    private function log($level,$msg,$context)
+    {
+        Debugger::barDump($context,$msg);
+        if ($this->logger)
+            $this->logger->log($level,$msg,$context);
+    }
 
     /**
      * Check if config is fully defined
@@ -24,6 +34,10 @@ class DropboxCached implements ProviderInterface
      */
     private function validateConfig()
     {
+        Debugger::barDump($this->config);
+
+        if (!isset($this->config['token']))
+            throw new \Exception("Dropbox token missing");
     }
 
     /**
@@ -34,8 +48,43 @@ class DropboxCached implements ProviderInterface
      */
     public function __construct(array $settings, LoggerInterface $logger)
     {
+        $this->config = $settings;
+        $this->logger = $logger;
+        $this->cache = $this->config['cache'];
+
+
+        if (!file_exists($this->cache))
+        {
+            $this->log("DEBUG","creating cache",["cache"=>$this->cache]);
+            mkdir($this->cache, 0755, true);
+        }
+
+        $this->validateConfig();
+
+        $dbApp = new DropboxApp(
+            null,
+            null,
+            $this->config['token']);
+        $this->dropbox = new Dropbox($dbApp);
     }
 
+    private function getLastCachedDocument(Wrapper $wrapper)
+    {
+
+        Debugger::barDump("checking for last record");
+        $last = json_decode(@file_get_contents($this->cache . "last"), false) ?? null;
+        Debugger::barDump($last);
+
+        if ($last && $wrapper->dropboxFilename === $last->dropboxFilename)
+        {
+            $last->error = $wrapper->error;
+            $last->live = false;
+            $wrapper = (new Wrapper)->cast($last);
+        }
+
+
+        return $wrapper;
+    }
 
     /**
      * @param string $dropboxfilename
@@ -43,6 +92,46 @@ class DropboxCached implements ProviderInterface
      */
     public function getHash(string $dropboxfilename)
     {
-        return null;
+        $wrapper = new Wrapper($dropboxfilename);
+
+        try {
+            //Get File Metadata
+            $fileMetadata = $this->dropbox->getMetadata($dropboxfilename);
+
+            $hash = $fileMetadata->getData()['content_hash'];
+            $wrapper->hash = $hash;
+
+        } catch (DropboxClientException $e) {
+            // Cannot download; check the last downloaded document
+            $wrapper->error = $e;
+            $wrapper = $this->getLastCachedDocument($wrapper);
+            return $wrapper;
+        }
+
+        // check if hash is already cached
+        $localDoc = $this->cache . $wrapper->hash;
+        if (file_exists($localDoc)) {
+            // document already in cache
+            $wrapper->cache = $localDoc;
+            $wrapper->live=false;
+            return $wrapper;
+        }
+
+        try {
+            // not cached, download
+            $this->dropbox->download($dropboxfilename, $localDoc);
+            $wrapper->cache = $localDoc;
+            $wrapper->live=true;
+
+            file_put_contents($this->cache . "last", json_encode($wrapper,JSON_PRETTY_PRINT));
+
+
+        } catch (DropboxClientException $e) {
+            // can't download ? you are out of luck
+            $wrapper->cache = null;
+            $wrapper->error = $e;
+        }
+
+        return $wrapper;
     }
 }
