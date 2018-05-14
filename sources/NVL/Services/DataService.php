@@ -12,8 +12,8 @@ use Psr\Log\LoggerInterface;
 
 abstract class DataService
 {
-    private $config = null;
-    private $logger = null;
+    protected $config = null;
+    protected $logger = null;
 
     protected function log($level, $msg, $context)
     {

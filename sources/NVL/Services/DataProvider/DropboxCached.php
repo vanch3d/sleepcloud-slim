@@ -11,31 +11,22 @@ namespace NVL\Services\DataProvider;
 use Kunnu\Dropbox\Dropbox;
 use Kunnu\Dropbox\DropboxApp;
 use Kunnu\Dropbox\Exceptions\DropboxClientException;
+use NVL\Services\DataService;
 use Psr\Log\LoggerInterface;
 use Tracy\Debugger;
 
-class DropboxCached implements ProviderInterface
+class DropboxCached extends DataService implements ProviderInterface
 {
-    private $config = null;
-    private $logger = null;
-    private $cache = null;
-    private $dropbox = null;
-
-    private function log($level,$msg,$context)
-    {
-        Debugger::barDump($context,$msg);
-        if ($this->logger)
-            $this->logger->log($level,$msg,$context);
-    }
+    protected $cache = null;
+    protected $dropbox = null;
 
     /**
      * Check if config is fully defined
      * @throws \Exception
      */
-    private function validateConfig()
+    protected function validateConfig()
     {
         Debugger::barDump($this->config);
-
         if (!isset($this->config['token']))
             throw new \Exception("Dropbox token missing");
     }
@@ -48,10 +39,8 @@ class DropboxCached implements ProviderInterface
      */
     public function __construct(array $settings, LoggerInterface $logger)
     {
-        $this->config = $settings;
-        $this->logger = $logger;
+        parent::__construct($settings,$logger);
         $this->cache = $this->config['cache'];
-
 
         if (!file_exists($this->cache))
         {
