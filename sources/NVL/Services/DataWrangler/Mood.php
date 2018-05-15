@@ -29,17 +29,19 @@ class Mood extends DataService implements WranglerInterface
         $this->provider = $provider;
     }
 
+    /**
+     * @throws \Exception
+     */
     protected function validateConfig()
     {
-        // TODO: Implement validateConfig() method.
+        if (!isset($this->config['data']['mood']))
+            throw new \Exception("Mood data source missing");
     }
 
     public function getData()
     {
         $wrapper = $this->provider->getHash($this->config['data']['mood']);
         Debugger::barDump($wrapper);
-
-        //$cache = $wrapper->cache;
 
         if (file_exists($wrapper->cache . ".json"))
         {
@@ -49,9 +51,6 @@ class Mood extends DataService implements WranglerInterface
             return $json;
 
         }
-
-        $jsonCache = $wrapper->cache . ".json";
-        $hash = basename($wrapper->cache, ".zip");
 
         $zip = new ZipArchive;
         $res = $zip->open($wrapper->cache);
@@ -86,7 +85,7 @@ class Mood extends DataService implements WranglerInterface
 
         }
 
-        $metadata['hash'] = $hash;
+        $metadata['hash'] = $wrapper->hash;
         $metadata['tags'] = $tags;
 
         $json = [
@@ -94,7 +93,7 @@ class Mood extends DataService implements WranglerInterface
             'metadata' => $metadata
         ];
 
-        file_put_contents($jsonCache, json_encode($json));
+        file_put_contents($wrapper->cache . ".json", json_encode($json));
 
         return $json;
     }
