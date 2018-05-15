@@ -59,10 +59,8 @@ class DropboxCached extends DataService implements ProviderInterface
 
     private function getLastCachedDocument(Wrapper $wrapper)
     {
-
-        Debugger::barDump("checking for last record");
-        $last = json_decode(@file_get_contents($this->cache . "last"), false) ?? null;
-        Debugger::barDump($last);
+        $sub = substr(md5($wrapper->dropboxFilename),0,3) . "/";
+        $last = json_decode(@file_get_contents($this->cache . $sub . "last"), false) ?? null;
 
         if ($last && $wrapper->dropboxFilename === $last->dropboxFilename)
         {
@@ -98,7 +96,13 @@ class DropboxCached extends DataService implements ProviderInterface
         }
 
         // check if hash is already cached
-        $localDoc = $this->cache . $wrapper->hash;
+        $sub = substr(md5($wrapper->dropboxFilename),0,3) . "/";
+        $localDoc = $this->cache . $sub . $wrapper->hash;
+        if (!file_exists($this->cache . $sub))
+        {
+            mkdir($this->cache . $sub, 0755, true);
+        }
+
         if (file_exists($localDoc)) {
             // document already in cache
             $wrapper->cache = $localDoc;
@@ -112,7 +116,7 @@ class DropboxCached extends DataService implements ProviderInterface
             $wrapper->cache = $localDoc;
             $wrapper->live=true;
 
-            file_put_contents($this->cache . "last", json_encode($wrapper,JSON_PRETTY_PRINT));
+            file_put_contents($this->cache . $sub . "last", json_encode($wrapper,JSON_PRETTY_PRINT));
 
 
         } catch (DropboxClientException $e) {
