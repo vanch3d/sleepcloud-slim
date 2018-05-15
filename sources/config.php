@@ -87,6 +87,15 @@ return [
         'sleepcloud-slim' => [
         ],
 
+        'dropbox' => [
+            'cache' => DIR . '.cache/.data/',
+            'token' => getenv("DROPBOX_TOKEN"),
+            'data' => [
+                'mood'=>    getenv("IMOOD_DATAFILE"),
+                'sleep'=>   getenv("SLEEPCLOUD_DATAFILE")
+            ]
+        ],
+
         'swagger' => [
             'version' => "3.0.1",
             'output' => 'openapi.json',
