@@ -105,3 +105,14 @@ $container['sleep'] = function (\Slim\Container  $c) {
     $dropbox = $c->get('dropbox');
     return new DataWrangler\Sleep($settings['dropbox'],$c->logger,$dropbox);
 };
+
+/**
+ * @param \Slim\Container $c
+ * @return DataWrangler\Diet
+ * @throws \Interop\Container\Exception\ContainerException
+ */
+$container['diet'] = function (\Slim\Container  $c) {
+    $settings = $c->get('settings');
+    $dropbox = $c->get('dropbox');
+    return new DataWrangler\Diet($settings['dropbox'],$c->logger,$dropbox);
+};
