@@ -14,7 +14,16 @@ interface ProviderInterface
     /**
      * @param string $filename
      * @return Wrapper
+     * /
+     * @todo[vanch3d] Rename the method into something more accurate
+     * @@todo[vanch3d] OR try to refactor the class to make the workflow more explicit
      */
     public function getHash(string $filename);
+
+    /**
+     * @param string $pathname
+     * @return \Kunnu\Dropbox\Models\MetadataCollection
+     */
+    public function listFolder(string $pathname);
 
 }

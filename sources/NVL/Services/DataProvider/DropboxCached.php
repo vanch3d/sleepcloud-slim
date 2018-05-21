@@ -11,8 +11,10 @@ namespace NVL\Services\DataProvider;
 use Kunnu\Dropbox\Dropbox;
 use Kunnu\Dropbox\DropboxApp;
 use Kunnu\Dropbox\Exceptions\DropboxClientException;
+use Kunnu\Dropbox\Models\FileMetadata;
 use NVL\Services\DataService;
 use Psr\Log\LoggerInterface;
+use Tightenco\Collect\Support\Collection;
 use Tracy\Debugger;
 
 class DropboxCached extends DataService implements ProviderInterface
@@ -26,9 +28,10 @@ class DropboxCached extends DataService implements ProviderInterface
      */
     protected function validateConfig()
     {
-        Debugger::barDump($this->config);
+        //Debugger::barDump($this->config);
         if (!isset($this->config['token']))
             throw new \Exception("Dropbox token missing");
+        return true;
     }
 
     /**
@@ -126,5 +129,14 @@ class DropboxCached extends DataService implements ProviderInterface
         }
 
         return $wrapper;
+    }
+
+    /**
+     * @param string $pathname
+     * @return \Kunnu\Dropbox\Models\MetadataCollection
+     */
+    public function listFolder(string $pathname)
+    {
+        return $ret = $this->dropbox->listFolder($pathname);
     }
 }
