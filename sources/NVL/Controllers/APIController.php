@@ -292,7 +292,7 @@ class APIController extends Controller
     public function getActivityData(Request $request, Response $response)
     {
         /** @var Health $health */
-        $health = $this->getContainer()->get("health");
+        $health = $this->getContainer()->get("activity");
         $json = $health->getActivity();
 
         return $response->withJson($json, 200);
@@ -310,7 +310,7 @@ class APIController extends Controller
     public function getStepsData(Request $request, Response $response)
     {
         /** @var Health $health */
-        $health = $this->getContainer()->get("health");
+        $health = $this->getContainer()->get("activity");
         $json = $health->getSteps();
 
         return $response->withJson($json, 200);
