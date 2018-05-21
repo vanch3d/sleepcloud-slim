@@ -92,7 +92,8 @@ return [
             'token' => getenv("DROPBOX_TOKEN"),
             'data' => [
                 'mood'=>    getenv("IMOOD_DATAFILE"),
-                'sleep'=>   getenv("SLEEPCLOUD_DATAFILE")
+                'sleep'=>   getenv("SLEEPCLOUD_DATAFILE"),
+                'health'=>   getenv("SHEALTH_BACKUPDIR")
             ]
         ],
 
