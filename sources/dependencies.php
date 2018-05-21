@@ -72,6 +72,10 @@ $container['twig_profile'] = function () {
 };
 
 
+// -----------------------------------------------------------------------------
+// Health Service Providers
+// -----------------------------------------------------------------------------
+
 /**
  * @param \Slim\Container $c
  * @return DataProvider\DropboxCached
@@ -114,5 +118,25 @@ $container['sleep'] = function (\Slim\Container  $c) {
 $container['diet'] = function (\Slim\Container  $c) {
     $settings = $c->get('settings');
     $dropbox = $c->get('dropbox');
-    return new DataWrangler\Diet($settings['dropbox'],$c->logger,$dropbox);
+    $diet =new DataWrangler\Diet($settings['dropbox'],$c->logger,$dropbox);
+    try {
+        // optionally add nutrient information
+        $nutrients = $c->get('nutrients');
+        $diet->setNutrientProvider($nutrients);
+    } catch (\Interop\Container\Exception\ContainerException $e) {
+    }
+    return $diet;
+
+};
+
+/**
+ * @param \Slim\Container $c
+ * @return DataWrangler\Health
+ * @throws Exception
+ * @throws \Interop\Container\Exception\ContainerException
+ */
+$container['activity'] = function (\Slim\Container  $c) {
+    $settings = $c->get('settings');
+    $dropbox = $c->get('dropbox');
+    return new DataWrangler\Health($settings['dropbox'],$c->logger,$dropbox);
 };
