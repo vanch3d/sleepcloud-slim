@@ -36,12 +36,12 @@ class Mood extends DataService implements WranglerInterface
     {
         if (!isset($this->config['data']['mood']))
             throw new \Exception("Mood data source missing");
+        return true;
     }
 
     public function getData()
     {
         $wrapper = $this->provider->getHash($this->config['data']['mood']);
-        Debugger::barDump($wrapper);
 
         if (file_exists($wrapper->cache . ".json"))
         {
