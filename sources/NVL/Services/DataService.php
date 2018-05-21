@@ -23,9 +23,23 @@ abstract class DataService
             $this->logger->log($level,$msg,$context);
     }
 
+    /**
+     * Ensure that the configuration array is complete and valid to run the service
+     * This is usually called in the service constructor
+     * Return true if all config elements are present and correct
+     * Throw and exception is not
+     * @throws \Exception
+     * @return boolean
+     */
     abstract protected function validateConfig();
 
 
+    /**
+     * DataService constructor.
+     * @param array           $settings
+     * @param LoggerInterface $logger
+     * @throws \Exception
+     */
     public function __construct(array $settings, LoggerInterface $logger)
     {
         $this->config = $settings;
