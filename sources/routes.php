@@ -41,6 +41,13 @@ $app->group('',function() {
         $this->get('/intake', function ($request, $response, $args) {
             return $this->view->render($response, 'visualisation/diet/target-week.twig');
         })->setName('vis.diet.intake-week');
+        $this->get('/sequence', function ($request, $response, $args) {
+            $show = ($request->getQueryParam("categories","false")!=="false");
+            Debugger::barDump($show);
+            return $this->view->render($response, 'visualisation/diet/sequence.twig',[
+                "showCategories"=> $show?"true":"false"
+            ]);
+        })->setName('vis.diet.sequence');
 
     })->add(function (Request $request, Response $response, callable $next) {
         // add application preference to globals
@@ -53,18 +60,47 @@ $app->group('',function() {
     $this->get('/nights/{id}', VisController::class . ':showNight')->setName('vis.night');
     $this->get('/horizon', VisController::class . ':showHorizon')->setName('vis.horizon');
 
+    $this->get('/activity', function ($request, $response, $args) {
+        return $this->view->render($response, 'visualisation/activity.overview.twig');
+    })->setName('vis.activity');
+
 });
 
 $app->group('/admin',function() {
 
     $this->get('', function ($request, $response, $args) {
-        return $this->view->render($response, 'base.twig');
+        return $this->view->render($response, 'admin/main.twig');
     })->setName('admin.home');
 
     $this->get('/diet', function ($request, $response, $args) {
         return $this->view->render($response, 'admin/food.categories.twig');
-    })->setName('admin.diet');
+    })->setName('admin.categories');
 
+    $this->get('/fatsecret', function ($request, $response, $args) {
+
+        /** @var \NVL\Services\Tools\FatSecret $fat */
+        $fat = $this->get("fatsecret");
+        $resp = $fat->searchIngredients("tomatoes");
+        if ($resp)
+        {
+            Debugger::barDump($resp);
+            $food = $fat->getIngredient($resp['foods']['food'][0]['food_id']);
+            Debugger::barDump($food);
+
+        }
+
+        $settings = $this->settings['fatsecret'];
+        Debugger::barDump($settings);
+        return $this->view->render($response, 'admin/fatsecret.twig',[
+            "fatsecret" => [ "key" => $settings['key']]
+        ]);
+    })->setName('admin.test');
+
+})->add(function (Request $request, Response $response, callable $next) {
+    // add application preference to globals
+    $cfg = \NVL\App::getAppPreferences();
+    $this->view->getEnvironment()->addGlobal("config", $cfg);
+    return $next($request, $response);
 });
 
 
@@ -82,7 +118,8 @@ $app->group('/api',function() {
     $this->get('/records/mood/tags', APIController::class . ':getMoodTags')->setName('api.mood.tags');
     $this->get('/records/diet', APIController::class . ':getDietData')->setName('api.diet.records');
     $this->get('/records/diet/nutrients', APIController::class . ':getNutrientData')->setName('api.diet.nutrient');
-
+    $this->get('/records/activity', APIController::class . ':getActivityData')->setName('api.health.activity');
+    $this->get('/records/steps', APIController::class . ':getStepsData')->setName('api.health.steps');
 });
 
 /**
@@ -90,7 +127,7 @@ $app->group('/api',function() {
  */
 
 $app->add(new \RunTracy\Middlewares\TracyMiddleware($app));
-$app->add(new \Slim\HttpCache\Cache('public', 86400));
+//$app->add(new \Slim\HttpCache\Cache('public', 86400));
 $app->add(function (Request $request, Response $response, callable $next) {
     $route = $request->getAttribute('route');
     if (!empty($route)) {
