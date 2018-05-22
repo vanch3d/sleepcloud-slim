@@ -1,0 +1,109 @@
+{% extends 'base.twig' %}
+
+{% block title %}Horizon chart{% endblock %}
+
+{% block content %}
+    <div id="controller" class="d-flex p-2 flex-row" style="width: 100%;">
+    </div>
+    <div id="mapdiv" style="width: 960px;">
+    </div>
+    <div id="legend" style="width: 100%;"></div>
+{% endblock %}
+
+{% block injectCSS %}
+    <style>
+        .text-center {
+            /*text-align: left !important;*/
+        }
+
+        .cover-container {
+            /*max-width: none;*/
+        }
+
+        .horizon {
+            overflow: visible !important;
+        }
+    </style>
+{% endblock %}
+
+{% block injectJS %}
+    <script src="/js/d3.v4-bundle.js"></script>
+    <script src="https://unpkg.com/d3-horizon-chart"></script>
+    <script>
+        $(document).ready(function () {
+
+            function loadStockData(stock, callback) {
+                d3.json("{{ path_for('api.health.activity') }}", function(rows) {
+                    console.log("rows",rows);
+                    rows = rows.map(function(d) {
+                        return {
+                            "time": d3.timeParse(d.create_time).toString(),
+                            "calorie": d.calorie,
+                            "steps": d.count,
+                            "distance": d.distance
+                        };
+                    }).filter(function(d) {
+                        return d.steps;
+                    }).reverse();
+                    console.log("rows2",rows);
+
+                    let date = rows[0].time,
+                        values = {
+                            "calorie": [],
+                            "steps": [],
+                            "distance": []
+                        };
+
+                    rows.forEach(function(d, i ) {
+                        for (i=0;i<3;i++){
+                            values.calorie.push(+d.calorie-500);
+                            values.steps.push(+d.steps-10000);
+                            values.distance.push(+d.distance-5000);
+                        }
+                    });
+
+                    console.log("values",values);
+
+                    callback(null, {
+                        'values': [
+                            {"name": "calorie", "values": values.calorie,'extent': [-1500,1500]},
+                            {"name": "steps", "values": values.steps,'extent': [-25000,25000]},
+                            {"name": "distance", "values": values.distance,'extent': [-20000,20000]},
+                        ]
+                    });
+                });
+            }
+
+            let q = d3.queue();
+            q.defer(loadStockData, []);
+
+            q.awaitAll(function(error, data) {
+                if (error) throw error;
+                console.log("data",data[0].values);
+
+                d3.select('#mapdiv').selectAll('.horizon')
+                    .data(data[0].values)
+                    .enter()
+                    .append('div')
+                    .attr('class', 'horizon')
+                    .each(function(d) {
+                        console.log("item",d);
+
+                        let _extent = d3.extent(d.values);
+                        let max = Math.max(-_extent[0], _extent[1]);
+                        console.log("max",_extent,max);
+
+                        let gg = d3.horizonChart();
+                        gg.height(80)
+                            .title(d.stock)
+                            .mode("offset")
+                            .extent([d.extent[0]*1.5,d.extent[1]])
+                            .call(this, d.values);
+                        console.log(gg.extent())
+                    });
+            });
+
+        });
+    </script>
+{% endblock %}
+
