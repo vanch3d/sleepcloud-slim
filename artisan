@@ -1,0 +1,102 @@
+#!/usr/bin/env php
+<?php
+/**
+ * Created by PhpStorm.
+ * User: vanch3d <nicolas.github@calques3d.org>
+ * Date: 22/05/2018
+ * Time: 13:21
+ */
+
+use Dotenv\Dotenv;
+use Dotenv\Exception\InvalidPathException;
+use Illuminate\Database\Capsule\Manager;
+use Illuminate\Database\Schema\Blueprint;
+
+defined('DS') || define('DS', DIRECTORY_SEPARATOR);
+define('DIR', realpath(__DIR__ . './') . DS);
+
+require DIR . './vendor/autoload.php';
+
+try {
+    (new Dotenv(__DIR__))->load();
+} catch (InvalidPathException $e) {
+    die($e);
+}
+
+$config = require_once DIR . './sources/config.php';
+
+class artisan
+{
+    private $args;
+    private $capsule;
+    private $config;
+
+    function __construct($args,$config)
+    {
+        $this->args = $args;
+        $this->config = $config;
+
+        $this->capsule = new Manager;
+        $this->capsule->addConnection($config['settings']['db']);
+        $this->capsule->setAsGlobal();
+        $this->capsule->bootEloquent();
+    }
+
+    function help()
+    {
+        echo /** @lang text */
+            "usage: php " . $this->args[0] . " <help> [<args>]\n";
+    }
+
+    function run()
+    {
+        if (count($this->args) <= 1) {
+            $this->help();
+            die();
+        }
+
+        switch ($this->args[1]) {
+            case "migrate":
+                $this->migrateUp();
+                if (isset($this->args[2]) && $this->args[2] === '--seed')
+                    $this->runSeed();
+                break;
+            case "seed":
+                $this->runSeed();
+                break;
+            case "clean":
+                $this->migrateDown();
+                break;
+
+            case "help":
+            case "--help":
+            default:
+                $this->help();
+                break;
+        }
+
+    }
+
+    public function migrateUp()
+    {
+        $dbPath = $this->config['settings']['db']['database'];
+        if (!file_exists($dbPath)) {
+            mkdir(dirname($dbPath), 0777, true);
+            new SQLite3($dbPath);
+        }
+    }
+
+    public function migrateDown()
+    {
+
+    }
+
+    public function runSeed()
+    {
+
+    }
+
+}
+
+$artisan = new artisan($argv,$config);
+$artisan->run();

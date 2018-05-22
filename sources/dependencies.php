@@ -19,6 +19,14 @@ use Slim\Views\TwigExtension;
 $container = $app->getContainer();
 
 // -----------------------------------------------------------------------------
+// Setup Eloquent
+// -----------------------------------------------------------------------------
+$capsule = new \Illuminate\Database\Capsule\Manager;
+$capsule->addConnection($container['settings']['db']);
+$capsule->setAsGlobal();
+$capsule->bootEloquent();
+
+// -----------------------------------------------------------------------------
 // Service providers
 // -----------------------------------------------------------------------------
 // Twig
@@ -70,6 +78,11 @@ $container['cache'] = function () {
 
 $container['twig_profile'] = function () {
     return new Twig_Profiler_Profile();
+};
+
+// Eloquent DB
+$container['db'] = function() use ($capsule) {
+    return $capsule;
 };
 
 

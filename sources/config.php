@@ -84,6 +84,12 @@ return [
             ]
         ],
 
+        'db' => [
+            'driver'   => 'sqlite',
+            'database' => DIR . '.database/database.sqlite',
+            'prefix'   => '',
+        ],
+
         'sleepcloud-slim' => [
         ],
 

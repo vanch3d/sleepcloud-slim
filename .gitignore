@@ -10,6 +10,7 @@
 ### Slim specifics ###
 /.cache/
 /.logs/
+/.database/
 
 ### Bower ###
 bower_components
