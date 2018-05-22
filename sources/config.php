@@ -97,6 +97,12 @@ return [
             ]
         ],
 
+        'fatsecret' =>[
+            'url' => 'http://platform.fatsecret.com/rest/server.api',
+            'key' => getenv("FATSECRET_KEY"),
+            'secret' => getenv("FATSECRET_SECRET")
+        ],
+
         'swagger' => [
             'version' => "3.0.1",
             'output' => 'openapi.json',
