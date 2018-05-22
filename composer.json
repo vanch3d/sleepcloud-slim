@@ -34,7 +34,12 @@
     "chadicus/slim-oauth2": "^3.1",
     "zircote/swagger-php": "3.x-dev",
     "crell/api-problem": "2.0.x-dev",
-    "braunson/fatsecret-laravel": "^5.0"
+    "braunson/fatsecret-laravel": "^5.0",
+    "illuminate/database": "^5.6",
+    "cartalyst/sentinel": "^2.0",
+    "symfony/http-foundation": "^4.0",
+    "ircmaxell/password-compat": "^1.0",
+    "illuminate/events": "^5.6"
   },
   "autoload": {
     "psr-4": {
