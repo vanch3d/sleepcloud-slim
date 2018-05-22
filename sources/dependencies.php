@@ -9,6 +9,7 @@
 use NVL\{
     Services\DataProvider,
     Services\DataWrangler,
+    Services\Tools,
     Support\Storage\Session
 };
 use Slim\Flash\Messages;
@@ -139,4 +140,13 @@ $container['activity'] = function (\Slim\Container  $c) {
     $settings = $c->get('settings');
     $dropbox = $c->get('dropbox');
     return new DataWrangler\Health($settings['dropbox'],$c->logger,$dropbox);
+};
+
+// -----------------------------------------------------------------------------
+// External Tools
+// -----------------------------------------------------------------------------
+
+$container['fatsecret'] = function (\Slim\Container  $c) {
+    $settings = $c->get('settings');
+    return new Tools\FatSecret($settings['fatsecret'],$c->logger);
 };
