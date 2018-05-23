@@ -36,6 +36,10 @@
 <div class="cover-container d-flex h-100 p-3 mx-auto flex-column">
     {% include('widgets/base.header.twig') %}
 
+    <aside class="inner">
+        {% include 'widgets/base.flash.twig' %}
+    </aside>
+
     {# @todo[vanch3d] Define proper UI element #}
     <aside class="inner cover border-light">
         {% block controller %}{% endblock %}
