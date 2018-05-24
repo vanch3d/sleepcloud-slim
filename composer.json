@@ -46,6 +46,8 @@
       "NVL\\": "sources/NVL"
     },
     "files": [
+      "database/MigrationSentinel.php",
+      "database/SeedSentinel.php"
     ]
   }
 
