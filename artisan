@@ -7,10 +7,14 @@
  * Time: 13:21
  */
 
+use Cartalyst\Sentinel\Roles\IlluminateRoleRepository;
 use Dotenv\Dotenv;
 use Dotenv\Exception\InvalidPathException;
 use Illuminate\Database\Capsule\Manager;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use NVL\Models\User;
+use Illuminate\Support\Facades\Schema as Schema;
 
 defined('DS') || define('DS', DIRECTORY_SEPARATOR);
 define('DIR', realpath(__DIR__ . './') . DS);
@@ -29,6 +33,7 @@ class artisan
 {
     private $args;
     private $capsule;
+    private $sentinel;
     private $config;
 
     function __construct($args,$config)
@@ -40,6 +45,16 @@ class artisan
         $this->capsule->addConnection($config['settings']['db']);
         $this->capsule->setAsGlobal();
         $this->capsule->bootEloquent();
+
+        $this->sentinel = (new \Cartalyst\Sentinel\Native\Facades\Sentinel())->getSentinel();
+        $this->sentinel->setUserRepository(
+            new \Cartalyst\Sentinel\Users\IlluminateUserRepository(
+                new Cartalyst\Sentinel\Hashing\BcryptHasher,
+                new Illuminate\Events\Dispatcher,
+                User::class
+            )
+        );
+
     }
 
     function help()
@@ -79,11 +94,6 @@ class artisan
 
     public function migrateUp()
     {
-        $dbPath = $this->config['settings']['db']['database'];
-        if (!file_exists($dbPath)) {
-            mkdir(dirname($dbPath), 0777, true);
-            new SQLite3($dbPath);
-        }
     }
 
     public function migrateDown()
@@ -95,7 +105,6 @@ class artisan
     {
 
     }
-
 }
 
 $artisan = new artisan($argv,$config);
