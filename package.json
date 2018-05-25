@@ -1,6 +1,6 @@
 {
   "name": "vanch3d/sleepcloud-slim",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "description": "A PHP/Slim/D3 port of the Sleep-as-Android & Sleepcloud app ecosystem",
   "main": "gulpfile.js",
   "directories": {
