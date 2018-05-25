@@ -10,9 +10,9 @@ use Dotenv\Dotenv;
 use Dotenv\Exception\InvalidPathException;
 
 //session_cache_limiter(false);
-//session_start();
-//date_default_timezone_set('Europe/London');
-//setlocale (LC_TIME, 'en_GB.UTF8','en_GB');
+session_start();
+date_default_timezone_set('Europe/London');
+setlocale (LC_TIME, 'en_GB.UTF8','en_GB');
 
 require './../vendor/autoload.php';
 
@@ -27,7 +27,7 @@ require_once __DIR__ . './../sources/helpers.php';
 
 // Initiate the app with configuration
 $config = require_once __DIR__.'./../sources/config.php';
-$app = new \NVL\App($config);
+$app = new \NVL\App(new \NVL\Container($config));
 
 // set up containers
 require_once __DIR__.'./../sources/dependencies.php';
