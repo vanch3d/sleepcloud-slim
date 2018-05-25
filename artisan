@@ -60,7 +60,7 @@ class artisan
     function help()
     {
         echo /** @lang text */
-            "usage: php " . $this->args[0] . " <help> [<args>]\n";
+            "usage: php " . $this->args[0] . " <help|migrate|seed|clean> [<args>]\n";
     }
 
     function run()
@@ -69,6 +69,7 @@ class artisan
             $this->help();
             die();
         }
+
 
         switch ($this->args[1]) {
             case "migrate":
@@ -94,16 +95,32 @@ class artisan
 
     public function migrateUp()
     {
+        echo "## running databases migration ..." . PHP_EOL ;
+
+        $dbPath = $this->config['settings']['db']['database'];
+        if (!file_exists($dbPath)) {
+            mkdir(dirname($dbPath), 0777, true);
+        }
+
+        $migrationSentinel = new MigrationSentinel();
+        $migrationSentinel->down();
+        $migrationSentinel->up();
+
     }
 
     public function migrateDown()
     {
+        echo "## running databases clean up ..." . PHP_EOL ;
+        $migrationSentinel = new MigrationSentinel();
+        $migrationSentinel->down();
 
     }
 
     public function runSeed()
     {
-
+        echo "## running databases seeding ..." . PHP_EOL ;
+        $seedSentinel = new SeedSentinel();
+        $seedSentinel->run();
     }
 }
 
