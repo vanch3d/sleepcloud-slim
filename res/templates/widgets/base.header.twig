@@ -12,6 +12,7 @@
                     <a class="nav-link {{ current_route =='home' ? 'active'}}" href="{{ path_for('home') }}">
                         <i title="home" class="fas fa-home"></i> Home</a>
                 </div>
+                {% if auth.check %}
                 <div class="btn-group mr-2" role="group" aria-label="Sleep">
                     <button type="button" class="btn" disabled>Sleep</button>
                     <a class="btn btn-secondary {{ current_route =='vis.calendar' ? 'active'}}" href="{{ path_for('vis.calendar') }}">
@@ -32,8 +33,22 @@
                     <a class="btn btn-secondary {{ current_route =='vis.diet.menu' ? 'active'}}" href="{{ path_for('vis.diet.menu') }}">
                         <i class="fas fa-utensils"></i></a>
                 </div>
+                {% endif %}
+                {#
                 <div class="btn-group" role="group" aria-label="Help">
                     <a class="btn nav-link" href="#"><i class="fas fa-info-circle"></i> About</a>
+                </div>
+                #}
+                <div class="btn-group" role="group" aria-label="Help">
+                    {% if not auth.check %}
+                    <a class="btn btn-secondary" href="{{ path_for('user.login') }}" title="Login"><i class="fas fa-sign-in-alt"></i></a>
+                    {% elseif auth.isAdmin %}
+                        <a class="btn btn-secondary" href="{{ path_for('user.logout') }}" title="Logout"><i class="fas fa-user-cog"></i>
+                            <i class="fas fa-sign-out-alt"></i></a>
+                    {% else  %}
+                        <a class="btn btn-secondary" href="{{ path_for('user.logout') }}" title="Logout"><i class="fas fa-user"></i>
+                            <i class="fas fa-sign-out-alt"></i></a>
+                    {% endif %}
                 </div>
             </div>
 
