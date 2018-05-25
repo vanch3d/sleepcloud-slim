@@ -10,12 +10,13 @@ namespace NVL\Middleware;
 
 
 use Interop\Container\ContainerInterface;
+use NVL\Container;
 use Slim\Http\Request;
 use Slim\Http\Response;
 
 abstract class Middleware
 {
-    /** @var ContainerInterface $c*/
+    /** @var Container $c*/
     protected $c;
 
     // constructor receives container instance
@@ -25,9 +26,9 @@ abstract class Middleware
     }
 
     /**
-     * @return ContainerInterface
+     * @return Container
      */
-    public function getContainer(): ContainerInterface
+    public function getContainer(): Container
     {
         return $this->c;
     }

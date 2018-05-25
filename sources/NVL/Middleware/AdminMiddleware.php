@@ -23,7 +23,15 @@ class AdminMiddleware extends Middleware
      */
     function __invoke(Request $request, Response $response, callable $next)
     {
-        // TODO: Implement __invoke() method.
+        $isAdmin = false;
+        if ($this->c->auth->check()) {
+            $isAdmin = $this->getContainer()->auth->isAdmin();
+        }
+        if (!$isAdmin) {
+            $this->c->flash->addMessage('error', 'You have no access right for this page.');
+            return $response->withRedirect($this->getContainer()->router->pathFor('home'));
+        }
+
         $response = $next($request, $response);
         return $response;
     }
