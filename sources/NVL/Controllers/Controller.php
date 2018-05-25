@@ -8,14 +8,23 @@
 
 namespace NVL\Controllers;
 
+use Cartalyst\Sentinel\Sentinel;
 use Interop\Container\ContainerInterface;
 use Monolog\Logger;
 use NVL\Support\Storage\Session;
+use Slim\Flash\Messages;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use Slim\Router;
 use Slim\Views\Twig;
 
+/**
+ * @property Twig view
+ * @property Sentinel sentinel
+ * @property Session session
+ * @property Router router
+ * @property Messages flash
+ */
 abstract class Controller
 {
     private $c;
@@ -32,6 +41,13 @@ abstract class Controller
     public function getContainer(): ContainerInterface
     {
         return $this->c;
+    }
+
+    public function __get($property)
+    {
+        if ($this->c->{$property}) {
+            return $this->c->{$property};
+        }
     }
 
 
