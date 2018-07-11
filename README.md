@@ -33,3 +33,5 @@ supported).
 ## Configuration
 
 [to do]
+
+## Bugs
